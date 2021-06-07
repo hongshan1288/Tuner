@@ -1,0 +1,8 @@
+; TAF.def : 导出DLL函数
+; 作者 : 何宏山 
+
+LIBRARY TAF
+
+EXPORTS
+
+TAF_DATA_VALUE	@ 1

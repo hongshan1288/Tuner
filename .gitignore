@@ -67,3 +67,33 @@ __recovery/
 
 # Boss dependency manager vendor folder https://github.com/HashLoad/boss
 modules/
+
+*.zip
+
+*.wav
+
+*.pk
+
+*.log
+
+*.obj
+
+*.sbr
+
+*.bsc
+
+*.exp
+
+*.ilk
+
+*.pch
+
+*.pdb
+
+*.idb
+
+*.ncb
+
+*.opt
+
+*.plg
