@@ -1,6 +1,6 @@
 object frmMain: TfrmMain
-  Left = 396
-  Top = 234
+  Left = 548
+  Top = 238
   Width = 653
   Height = 242
   Caption = '手风琴调音软件'

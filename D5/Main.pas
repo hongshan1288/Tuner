@@ -512,6 +512,8 @@ begin
   
   bb := Panel_WaveForm.Parent.Height - ( bh+ba+ba div 2 ) ;
 
+  bb := bb * 2 ;
+
   Panel_WaveForm.SetBounds( Panel_WaveForm.Left,
                             Panel_WaveForm.Top,
                             Panel_WaveForm.Parent.Width - ba*2,

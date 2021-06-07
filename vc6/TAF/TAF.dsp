@@ -96,6 +96,14 @@ SOURCE=.\AudioProc.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\ComUtils.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\FreqByPcm.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\StdAfx.cpp
 # ADD CPP /Yc"stdafx.h"
 # End Source File
@@ -114,6 +122,14 @@ SOURCE=.\TAF.def
 # Begin Source File
 
 SOURCE=.\AudioProc.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\ComUtils.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\FreqByPcm.h
 # End Source File
 # Begin Source File
 

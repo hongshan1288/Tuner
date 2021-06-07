@@ -4,6 +4,8 @@
 #include "stdafx.h"
 #include "TAF.h"
 #include "AudioProc.h"
+#include "ComUtils.h"
+#include "FreqByPcm.h"
 
 //#define from_proc_prt	log_printf_ex
 #define from_proc_prt	//
@@ -18,6 +20,8 @@
 #define MAX_PCM_DIV		10
 #define	MIN_AMP_MEAN	5
 
+
+void init_fbp() ;
 
 void do_new_show_vars_proc() ;
 void do_refresh_proc() ;
@@ -34,6 +38,8 @@ void test3_proc( char *DataValue ) ;
 void test4_proc( char *DataValue ) ;
 void test5_proc( char *DataValue ) ;
 void test6_proc( char *DataValue ) ;
+
+long do_test_wave_proc( char *wav_file ) ;
 
 void	audio_close_proc() ;
 void clear_wave_area() ;
@@ -73,8 +79,9 @@ void print_filter_data2() ;
 
 void print_freq_tj_data() ;
 
+void init_pmd() ;
+
 //////////////////////////////////////////////////////////////////////
-#define PopEvent( sNo, sVal, sName )		_Fire_Event( (sNo), (sVal), (sName), __FILE__, __LINE__ )
 //////////////////////////////////////////////////////////////////////
 #define NOTE_INFO_MAX	128
 //////////////////////////////////////////////////////////////////////
@@ -223,11 +230,6 @@ struct	FREQ_DATA
 } ;
 
 //////////////////////////////////////////////////////////////////////
-HWND	g_CallBack_Handle=NULL ;
-
-HWND	g_waveForm_wnd, g_dataInfo_wnd ;
-HDC		g_waveForm_DC, g_dataInfo_DC ;
-
 
 LPBYTE	g_waveForm_pan_dc_buf ;
 long	g_waveForm_pan_aa, g_waveForm_pan_bb ;
@@ -243,8 +245,6 @@ long	g_ExitFlag = 0 ;
 long	g_waveForm_backColor, g_dataInfo_backColor ;
 char	g_waveForm_fontName[50], g_dataInfo_fontName[50] ;
 
-long	g_waveForm_aa, g_waveForm_bb ;
-long	g_dataInfo_aa, g_dataInfo_bb ;
 long	g_dataInfo_cx ; // 数据显示区的中间分隔位置
 long	g_NoteName_fontColor ;
 
@@ -264,9 +264,6 @@ long	g_wave_data_size ;
 short	*g_waveForm_pcm ;
 long	g_waveForm_pcm_len=0 ;
 
-POINT	*g_waveForm_xy ;
-long	g_waveForm_xy_len ;
-
 double	g_curFreq=0, g_showFreq=0 ;
 
 long	g_test=0 ;
@@ -281,7 +278,6 @@ long	g_pcm_data_max, g_pcm_data_pos ;
 long	g_pcm_data_is, g_pcm_data_ie ;
 long	g_pcm_data_cn ;
 LPBYTE	g_pcm_data ;
-short	*g_int_data ;
 POINT	*g_xy_data ;
 
 
@@ -332,7 +328,6 @@ char			g_note_file[500] ;
 
 Note_Show		g_freq_show ;
 
-long			g_waveForm_xy_nn, g_waveForm_xy_ca ;
 long			g_waveForm_xy_x1, g_waveForm_xy_x2 ;
 
 long			g_waveForm_xy_a1, g_waveForm_xy_a2 ;
@@ -360,37 +355,7 @@ void show_mm_data_proc( MM_DATA *mm_data, long mm_si, long mm_ei, long xx_len, l
 AudioProc	g_Audio ;
 double		g_Samples ;
 //////////////////////////////////////////////////////////////////////
-#define FreeBuf( a ) { \
-	if ( (a)==INVALID_HANDLE_VALUE || (a)==NULL ) \
-		; \
-	else \
-	{ \
-		GlobalFree( a ) ; \
-		a=NULL ; \
-	} \
-}
-#define FreeHandle( a ) { \
-	if ( (a)==INVALID_HANDLE_VALUE || (a)==(void*)INVALID_FILE_SIZE || (a)==NULL ) \
-		; \
-	else \
-	{ \
-		CloseHandle( a ) ; \
-		a=NULL ; \
-	} \
-}
 //////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////
-void __Fire_Event( long StateNo, long StateValue ) 
-{
-	if ( g_CallBack_Handle!=NULL )
-		SendMessage( g_CallBack_Handle, WM_USER+500, StateNo, StateValue ) ;
-}
-/////////////////////////////////////////////////////////////////////////////
-void _Fire_Event( long StateNo, long StateValue, char *StateName, char *srcFile, long srcLine ) 
-{
-	__Fire_Event( StateNo, StateValue ) ;
-}
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 BOOL APIENTRY DllMain( HANDLE hModule, 
@@ -409,20 +374,6 @@ BOOL APIENTRY DllMain( HANDLE hModule,
     return TRUE;
 }
 //////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////
-BOOL DoEventProc()
-{
-		MSG msg; 
-
-	while ( PeekMessage( &msg, NULL, 0, 0, PM_REMOVE) )
-	{ 
-		if ( msg.message==WM_QUIT ) 
-			return FALSE; 
-		TranslateMessage(&msg); 
-		DispatchMessage(&msg); 
-	}
-	return ( TRUE ) ;
-} 
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 CRITICAL_SECTION	cs_WaveData={0} ;
@@ -614,157 +565,6 @@ static	long tick_ThreadProc()
 }
 //////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
-long FileSeek( HANDLE hf, DWORD offset, DWORD MoveMethod)
-{
-	DWORD	FilePos ;
-
-	FilePos = SetFilePointer( hf, offset, 0, MoveMethod ) ;
-	if ( FilePos<0 ) 
-		return ( -1 ) ;
-	else
-		return ( FilePos ) ;
-}
-/////////////////////////////////////////////////////////////////////////////
-long Get_FileSize( char pFile[] )
-{
-	HANDLE	FileHandle ;
-	long	dPos ;
-
-	FileHandle = CreateFile( pFile, 
-								GENERIC_READ,
-								FILE_SHARE_READ | FILE_SHARE_WRITE,
-								0,
-								OPEN_EXISTING,
-								FILE_ATTRIBUTE_NORMAL,
-								0 ) ;
-
-	if ( FileHandle==INVALID_HANDLE_VALUE )
-		return ( -1 ) ; //打不开返回
-
-	dPos = FileSeek( FileHandle, 0, 2 ) ;
-	CloseHandle( FileHandle ) ;
-	return( dPos ) ;
-}
-/////////////////////////////////////////////////////////////////////////////
-long ReadBufFromFile( char *pFile, LPVOID Buf, long pos, long size )
-{
-	HANDLE	FileHandle ;
-	DWORD	dBytes ;
-
-	FileHandle = CreateFile( pFile, 
-								GENERIC_READ,
-								FILE_SHARE_READ | FILE_SHARE_WRITE,
-								0,
-								OPEN_EXISTING,
-								FILE_ATTRIBUTE_NORMAL,
-								0 ) ;
-
-	if ( FileHandle==INVALID_HANDLE_VALUE )
-		return ( -1 ) ; //打不开返回
-
-	FileSeek( FileHandle, pos, 0 ) ;
-	ReadFile( FileHandle, (LPVOID)Buf, size, &dBytes, 0 ) ;
-	CloseHandle( FileHandle ) ;
-	return( dBytes ) ;
-}
-/////////////////////////////////////////////////////////////////////////////
-long ReadBufFromFile( char *pFile, LPVOID Buf, long size )
-{
-	HANDLE	FileHandle ;
-	DWORD	dBytes ;
-
-	FileHandle = CreateFile( pFile, 
-								GENERIC_READ,
-								FILE_SHARE_READ | FILE_SHARE_WRITE,
-								0,
-								OPEN_EXISTING,
-								FILE_ATTRIBUTE_NORMAL,
-								0 ) ;
-
-	if ( FileHandle==INVALID_HANDLE_VALUE )
-		return ( -1 ) ; //打不开返回
-
-	ReadFile( FileHandle, (LPVOID)Buf, size, &dBytes, 0 ) ;
-	CloseHandle( FileHandle ) ;
-	return( dBytes ) ;
-}
-/////////////////////////////////////////////////////////////////////////////
-long WriteBufToFile( char *pFile, LPVOID Buf, long size )
-{
-	HANDLE	FileHandle ;
-	DWORD	dBytes ;
-
-	FileHandle = CreateFile( pFile, 
-								GENERIC_WRITE,
-								FILE_SHARE_READ | FILE_SHARE_WRITE,
-								0,
-								CREATE_ALWAYS,
-								FILE_ATTRIBUTE_NORMAL,
-								0 ) ;
-
-	if ( FileHandle==INVALID_HANDLE_VALUE )
-		return ( -1 ) ; //打不开返回
-
-	WriteFile( FileHandle, (LPVOID)Buf, size, &dBytes, 0 ) ;
-	CloseHandle( FileHandle ) ;
-	return( 0 ) ;
-}
-/////////////////////////////////////////////////////////////////////////////
-long AppendBufToFile( char *pFile, LPVOID Buf, long size )
-{
-	HANDLE	FileHandle ;
-	DWORD	dBytes ;
-
-	FileHandle = CreateFile( pFile, 
-								GENERIC_WRITE | GENERIC_READ,
-								FILE_SHARE_READ | FILE_SHARE_WRITE,
-								0,
-								OPEN_EXISTING,
-								FILE_ATTRIBUTE_NORMAL,
-								0 ) ;
-
-	if ( FileHandle==INVALID_HANDLE_VALUE )
-	{
-		FileHandle = CreateFile( pFile, 
-									GENERIC_WRITE,
-									FILE_SHARE_READ | FILE_SHARE_WRITE,
-									0,
-									CREATE_ALWAYS,
-									FILE_ATTRIBUTE_NORMAL,
-									0 ) ;
-
-		if ( FileHandle==INVALID_HANDLE_VALUE )
-			return ( -1 ) ; //创建也打不开则返回
-
-	}
-
-	FileSeek( FileHandle, 0, 2 ) ;
-	WriteFile( FileHandle, (LPVOID)Buf, size, &dBytes, 0 ) ;
-	CloseHandle( FileHandle ) ;
-	return( 0 ) ;
-}
-//////////////////////////////////////////////////////////////////////
-void WriteLogFile( char *logFile, char *log_ss )
-{
-	AppendBufToFile( logFile, log_ss, strlen(log_ss) ) ;
-}
-//////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
-static	char	__log_ss[5000] ;
-void log_printf_ex( char *log_file, char *fmt, ... )
-{
-//	if ( g_print_flag==0 )
-//		return ;
-	if ( log_file[0]=='\0' )
-		return ;
-	va_list args;
-	va_start(args, fmt);
-	vsprintf( __log_ss, fmt, args );
-	WriteLogFile( log_file, __log_ss );
-	va_end( args );
-}
-//////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
 long SaveBMPFile_ex( char pFileName[], long bits, long width, long height, LPVOID BmpBuf )
 {
 
@@ -917,7 +717,7 @@ long waveIn_Data_Proc( LPVOID dataBuf, long dataSize, LPVOID lpparam )
 		return ( 0 ) ;
 
 	if ( g_waveForm_save>0 )
-		AppendBufToFile( "d:\\hhs.wav", dataBuf, dataSize ) ;
+		AppendBufToFile( "c:\\hhs.wav", dataBuf, dataSize ) ;
 
 //	do_WaveData( 101, (short*)dataBuf ) ;
 
@@ -938,6 +738,8 @@ void	audio_close_proc()
 //////////////////////////////////////////////////////////////////////
 void	open_all_pcm_data( long max_sec, long buf_size )
 {
+
+	init_fbp() ;
 
 	g_all_pcm_max = max_sec*buf_size*MAX_PCM_DIV ;
 
@@ -1098,295 +900,6 @@ long	TAF_DATA_VALUE( char *DataName, char *DataValue )
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////
-/**
-GetTextMetrics，该函数把程序当前的字体信息，存放到TEXTMETRIC
-
-函数原型：BOOL GetTextMetrics(HDC hdc, LPTEXTMETRIC lptm)；
-
-TEXTMETRIC是在WINGDI.H中定义的型态的结构。
-
-
-TEXTMETRIC是在WINGDI.H中定义的型态的结构。
-TEXTMETRIC结构有20个栏位：
-typedef struct tagTEXTMETRIC { // tm
-LONG tmHeight; //字符高度
-LONG tmAscent; //字符上部高度(基线以上)
-LONG tmDescent; //字符下部高度(基线以下)
-LONG tmInternalLeading, //由tmHeight定义的字符高度的顶部空间数目
-LONG tmExternalLeading, //夹在两行之间的空间数目
-LONG tmAveCharWidth, //平均字符宽度
-LONG tmMaxCharWidth, //最宽字符的宽度
-LONG tmWeight; //字体的粗细轻重程度
-LONG tmOverhang, //加入某些拼接字体上的附加高度
-LONG tmDigitizedAspectX, //字体设计所针对的设备水平方向
-LONG tmDigitizedAspectY, //字体设计所针对的设备垂直方向
-BCHAR tmFirstChar; //为字体定义的第一个字符
-BCHAR tmLastChar; //为字体定义的最后一个字符
-BCHAR tmDefaultChar; //字体中所没有字符的替代字符
-BCHAR tmBreakChar; //用于拆字的字符
-BYTE tmItalic, //字体为斜体时非零
-BYTE tmUnderlined, //字体为下划线时非零
-BYTE tmStruckOut, //字体被删去时非零
-BYTE tmPitchAndFamily, //字体间距(低4位)和族(高4位)
-BYTE tmCharSet; //字体的字符集
-} TEXTMETRIC;
-**/
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////
-void Rect_expand_xy( long *x1, long *y1, long *x2, long *y2, long dd )
-{
-
-	if ( dd==0 )
-		return ;
-
-	long	dx, da ;
-
-	if ( dd==1 )
-	{
-		dx = dd ;
-		da = 0 ;
-	}
-	else
-	{
-		dx = dd/2 ;
-		da = 1 ;
-		if ( (dd%2)>0 )
-		{
-			dx++ ;
-			da=0 ;
-		}
-	}
-
-	*x1 -= dx ;
-	*y1 -= dx ;
-	*x2 += dx+da ;
-	*y2 += dx+da ;
-
-}
-////////////////////////////////////////////////////////////////////////////////
-void set_poly_xy2( POINT *poly_xy, long x1, long y1, long x2, long y2, long dd )
-{
-
-	Rect_expand_xy( &x1, &y1, &x2, &y2, dd ) ;
-
-	poly_xy[0].x = x1 ;
-	poly_xy[0].y = y1 ;
-
-	poly_xy[1].x = x2 ;
-	poly_xy[1].y = y1 ;
-
-	poly_xy[2].x = x2 ;
-	poly_xy[2].y = y2 ;
-
-	poly_xy[3].x = x1;
-	poly_xy[3].y = y2 ;
-
-	poly_xy[4].x = x1 ;
-	poly_xy[4].y = y1 ;
-
-}
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-HPEN __CreatePen( long line_style, long line_width, long line_color )
-{
-	HPEN	hpen ;
-	if ( line_style==0 )
-		hpen = CreatePen( PS_SOLID, line_width, line_color ) ;
-	else
-	{
-		LOGBRUSH	logBrush ;
-		long		dd = line_width / 3 ;
-
-		logBrush.lbStyle = PS_SOLID ;
-		logBrush.lbColor = line_color ;
-		logBrush.lbHatch = 0 ;
-
-		if ( line_style==1 )
-		{
-/**
-			line_style_dd[0] = 0xffff0000 ;
-			line_style_dd[1] = 0xffff0000 ;
-			line_style_dd[2] = 0xffff0000 ;
-			line_style_dd[3] = 0xffff0000 ;
-			hpen = ExtCreatePen( PS_USERSTYLE|PS_GEOMETRIC|PS_ENDCAP_SQUARE, line_width, &logBrush, 4, line_style_dd );
-**/
-			hpen = ExtCreatePen( PS_DASH | PS_GEOMETRIC | PS_ENDCAP_ROUND, line_width, &logBrush, 0, NULL );
-		}
-		else if ( line_style==2 )
-		{
-			hpen = ExtCreatePen( PS_DOT | PS_GEOMETRIC | PS_ENDCAP_ROUND, line_width, &logBrush, 0, NULL );
-		}
-		else
-		{
-			hpen = ExtCreatePen( PS_DASHDOT | PS_GEOMETRIC | PS_ENDCAP_ROUND, line_width, &logBrush, 0, NULL );
-//			hpen = ExtCreatePen( PS_USERSTYLE|PS_GEOMETRIC|PS_ENDCAP_FLAT, line_width, &logBrush, 4, line_style_dd );
-		}
-	}
-	return ( hpen ) ;
-}
-////////////////////////////////////////////////////////////////////////////////
-void Polyline( HDC hdc, POINT *xy, long xy_nn, long line_width, long line_color, long line_style, long line_mode  )
-{
-
-	HPEN	hpen = __CreatePen( line_style, line_width, line_color ) ;
-	SetROP2( hdc, line_mode ) ; //R2_XORPEN 异或
-	SelectObject( hdc, hpen );    // 指定画笔
-	::Polyline( hdc, xy, xy_nn ) ;
-	DeleteObject( hpen ) ;
-
-}
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-void Get_Font_ab( HDC hdc, long *font_aa, long *font_bb )
-{
-	TEXTMETRIC TextMetric;
-	GetTextMetrics( hdc, &TextMetric ) ;
-	*font_aa = TextMetric.tmAveCharWidth ;
-	*font_bb = TextMetric.tmHeight ;
-}
-////////////////////////////////////////////////////////////////////////////////
-void DrawBar( HDC hdc, long x1, long y1, long x2, long y2, long bar_color, long bar_style, long bar_mode )
-{
-
-	long	rop2, bar_width ;
-	HPEN	hpen, hpenOld ;
-	LOGBRUSH lb ;
-
-	lb.lbStyle = bar_style;
-	lb.lbColor = bar_color;
-	lb.lbHatch = 0 ;
-
-	bar_width = 1 ;
-	hpen = ExtCreatePen(PS_GEOMETRIC | bar_style | PS_ENDCAP_FLAT, bar_width, &lb, 0, NULL);
-	hpenOld = (HPEN)SelectObject( hdc, hpen );    // 指定画笔
-	rop2 = GetROP2( hdc ) ;
-	SetROP2( hdc, bar_mode ) ;		//R2_XORPEN 异或
-
-	long	y ;
-	for ( y=y1; y<=y2; y++ )
-	{
-		::MoveToEx( hdc, x1, y, NULL ) ;
-		::LineTo( hdc, x2, y ) ;
-	}
-
-	SelectObject( hdc, hpenOld );		// 恢复原来的画笔
-	SetROP2( hdc, rop2 ) ;			// 恢复
-	DeleteObject( hpen ) ;
-
-}
-////////////////////////////////////////////////////////////////////////////////
-void DrawRect( HDC hdc, long x1, long y1, long x2, long y2, long line_width, long line_color, long line_style, long line_mode )
-{
-
-	POINT	poly_xy[5] ;
-	set_poly_xy2( poly_xy, x1, y1, x2, y2, line_width ) ;
-
-	long	rop2 ;
-	HPEN	hpen, hpenOld ;
-
-	hpen = __CreatePen( line_style, line_width, line_color ) ; // PS_SOLID
-//	hpen = __CreatePen( line_width, line_color, line_style ) ;
-	hpenOld = (HPEN)SelectObject( hdc, hpen );    // 指定画笔
-	rop2 = GetROP2( hdc ) ;
-	SetROP2( hdc, line_mode ) ;		//R2_XORPEN 异或
-
-	::Polyline( hdc, poly_xy, 5 ) ;
-
-	SelectObject( hdc, hpenOld );		// 恢复原来的画笔
-	SetROP2( hdc, rop2 ) ;			// 恢复
-	DeleteObject( hpen ) ;
-}
-//////////////////////////////////////////////////////////////////////
-void DrawLine( HDC hdc, long x1, long y1, long x2, long y2, long line_width, long line_color, long line_style, long line_mode )
-{
-	HPEN	hpen = __CreatePen( line_style, line_width, line_color ) ;
-	SetROP2( hdc, line_mode ) ; //R2_XORPEN 异或
-	SelectObject( hdc, hpen );    // 指定画笔
-	if ( x1==x2 && y1==y2 )
-		::SetPixel( hdc, x1, y1, line_color ) ;
-	else
-	{
-		::MoveToEx( hdc, x1, y1, NULL ) ;
-		::LineTo( hdc, x2, y2 ) ;
-	}
-	DeleteObject( hpen ) ;
-}
-//////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////
-long Get_Text_AB( HDC hdc, char *text, long *aa, long *bb )
-{
-	SIZE	a_size ;
-	
-	if ( GetTextExtentPoint32( hdc, text, strlen(text), &a_size ) )
-	{
-		*aa = a_size.cx ;
-		*bb = a_size.cy ;
-		return ( 1 ) ;
-	}
-	else
-		return ( -1 ) ;
-}
-//////////////////////////////////////////////////////////////////////
-void DrawText( HDC hdc, char *pText, long xx, long yy, long font_color, long bk_color, long text_align, long text_valign )
-{
-	long	ta, tb ;
-
-	Get_Text_AB( hdc, pText, &ta, &tb ) ;
-
-	if ( text_align==0 )
-		xx -= ta/2 ;
-	else if ( text_align>0 )
-		xx += text_align ;
-	else if ( text_align<0 )
-		xx -= ta - text_align ;
-
-	if ( text_valign==0 )
-		yy -= tb/2 ;
-	else if ( text_valign>0 )
-		yy += text_valign ;
-	else if ( text_valign<0 )
-		yy -= tb - text_valign ;
-
-	SetTextAlign( hdc, TA_LEFT ) ;
-	if ( bk_color==0 )
-		SetBkMode( hdc, TRANSPARENT ) ;
-	else
-	{
-		SetBkMode( hdc, OPAQUE ) ;
-	}
-	SetTextColor( hdc, font_color ) ;
-	SetBkColor( hdc, bk_color ) ;
-	::TextOut( hdc, xx, yy, pText, strlen(pText) ) ;
-
-}
-//////////////////////////////////////////////////////////////////////
-void SetFont( HDC hdc, long font_height, long font_style, char *font_name )
-{
-	HFONT hfont = CreateFont(
-							-font_height,// nHeight 负数表明直接用它实际的高度，而不是转换成字号的高度
-							0,			// nWidth 
-							0,			// nEscapement 
-							0,			// nOrientation 
-							font_style, // FW_HEAVY,	//FW_BOLD,	// nWeight 
-							FALSE,		// bItalic 
-							FALSE,		// bUnderline 
-							0,			// cStrikeOut 
-							ANSI_CHARSET, // nCharSet 
-							OUT_DEFAULT_PRECIS, // nOutPrecision 
-							CLIP_DEFAULT_PRECIS, // nClipPrecision 
-							DEFAULT_QUALITY, // nQuality 
-							DEFAULT_PITCH | FF_SWISS, // nPitchAndFamily 
-							font_name 
-						); // lpszFac
-	SelectObject( hdc, hfont ) ;
-	DeleteObject( hfont ) ;
-}
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 long make_pan_dc_memory_buf( HDC pan_dc, long aa, long bb )
@@ -1762,12 +1275,12 @@ long open_proc( char *DataValue )
 	strcpy( g_new_rect_vars, "" ) ;
 	
 
-	strcpy( g_logFile, "d:\\Dev\\Tuner\\testData\\hhs.log" ) ;
-	strcpy( g_logFile2, "d:\\Dev\\Tuner\\testData\\hhs2.log" ) ;
-	strcpy( g_tjFile, "d:\\Dev\\Tuner\\testData\\tj.log" ) ;
+	strcpy( g_logFile, "..\\testData\\hhs.log" ) ;
+	strcpy( g_logFile2, "..\\testData\\hhs2.log" ) ;
+	strcpy( g_tjFile, "..\\testData\\tj.log" ) ;
 	
 
-	DeleteFile( "d:\\hhs.wav" ) ;
+	DeleteFile( "..\\hhs.wav" ) ;
 
 	PopEvent( 1001, form_wnd, "open_proc_ok" ) ;
 
@@ -1993,7 +1506,7 @@ void do_wave_data_proc( long waveFileNo )
 		if ( check_wave_data_ok(10) )
 		{
 			if ( waveFileNo>0 )
-				save_to_file( waveFileNo, "d:\\hhs.wav" ) ;
+				save_to_file( waveFileNo, "c:\\hhs.wav" ) ;
 			show_waveForm_proc() ;
 		}
 		g_wave_show_flag = 0 ;
@@ -2198,19 +1711,10 @@ void set_music_note_read( char *waveFile )
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
-long test_proc( char *DataValue )
-{
-
-	long	vv ;
-	sscanf( DataValue, "%ld", &vv ) ;
-
-	do_wave_data_proc( vv ) ;
-
-	return ( 0 ) ;
-}
-//////////////////////////////////////////////////////////////////////
 long test2_proc( char *DataValue )
 {
+	return ( 0 ) ;
+/*
 	char	ss[200] ;
 	sprintf( ss, "D:\\Dev\\Tuner\\testData\\wav\\%s.wav", DataValue ) ;
 
@@ -2218,6 +1722,7 @@ long test2_proc( char *DataValue )
 	do_wave_data_from_file2( ss ) ;
 
 	return ( 0 ) ;
+*/
 }
 //////////////////////////////////////////////////////////////////////
 void test3_proc( char *DataValue )
@@ -3031,16 +2536,6 @@ void show_freq_from_pcm_data( short *pcm_data, long pcm_len )
 }
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
-inline short get_waveForm_y( long y, long y0 )
-{
-	double	yy ;
-	yy = y ;
-	yy = (yy*y0/32768) ;
-	y = (long)floor(yy) + y0 ;
-	y = y0*2-y ;
-	return ( (short)y ) ;
-}
-//////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 void show_mm_data_proc( MM_DATA *mm_data, long mm_si, long mm_ei, long xx_len, long mm_color )
 {
@@ -3217,7 +2712,7 @@ void push_pcm_proc( BYTE *pcm_buf, long pcm_len )
 	g_testFile_tot ++ ;
 
 	sprintf( g_test_pcm_name, "tst-%s-%05ld", g_test_data.music_note, g_pcm_data_cn++ ) ;
-	sprintf( g_test_pcm_file, "D:\\Dev\\Tuner\\testData\\tmp\\%s.wav", g_test_pcm_name ) ;
+	sprintf( g_test_pcm_file, "z:\\d5\\Tuner\\testData\\tmp\\%s.wav", g_test_pcm_name ) ;
 
 //	WriteBufToFile( g_test_pcm_file, g_pcm_data, g_pcm_data_pos ) ;
 	WriteBufToFile( g_test_pcm_file, pcm_buf, pcm_len ) ;
@@ -3270,7 +2765,7 @@ void push_pcm_proc_new( BYTE *pcm_buf, long pcm_len )
 	g_testFile_tot ++ ;
 
 	sprintf( g_test_pcm_name, "tst-%s-%05ld", g_test_data.music_note, g_pcm_data_cn++ ) ;
-	sprintf( g_test_pcm_file, "D:\\Dev\\Tuner\\testData\\tmp\\%s.wav", g_test_pcm_name ) ;
+	sprintf( g_test_pcm_file, "z:\\d5\\Tuner\\testData\\tmp\\%s.wav", g_test_pcm_name ) ;
 //	WriteBufToFile( g_test_pcm_file, g_pcm_data, g_pcm_data_pos ) ;
 	WriteBufToFile( g_test_pcm_file, pcm_buf, pcm_len ) ;
 
@@ -3290,7 +2785,7 @@ void push_pcm_proc_new( BYTE *pcm_buf, long pcm_len )
 		if ( g_all_pcm_pos>0 ) 
 		{
 			char	allFile[500] ;
-			sprintf( allFile, "D:\\Dev\\Tuner\\testData\\tmp\\tst-%s-all.wav", g_test_data.music_note ) ;
+			sprintf( allFile, "z:\\d5\\Tuner\\testData\\tmp\\tst-%s-all.wav", g_test_data.music_note ) ;
 			WriteBufToFile( allFile, g_all_pcm, g_all_pcm_pos ) ;
 log_prt( g_logFile, "start======================================================================tst_file=%s\r\n", allFile ) ;
 			make_freq_from_pcmData( 1, 0, (short*)g_all_pcm, g_all_pcm_pos/2, "all" ) ;
@@ -6011,29 +5506,6 @@ long make_WaveForm_data( short *pcm_data, long i0, long i1, long i2, long xxx, l
 
 }
 //////////////////////////////////////////////////////////////////////
-void show_waveForm_xy( long dot_show_flag, POINT *xy_data, long xy_nn, long line_width, long waveForm_color, long dc_line_color )
-{
-
-	long	y0 = g_waveForm_bb / 2 ;
-
-	Polyline( g_waveForm_DC, xy_data, xy_nn, line_width, waveForm_color, PS_SOLID, R2_COPYPEN ) ;
-	DrawLine( g_waveForm_DC, 0, y0, g_waveForm_aa-1, y0, line_width, dc_line_color, PS_SOLID, R2_COPYPEN ) ;
-
-	if ( dot_show_flag>0 )
-	{
-		long	i, x, y, dot_color ;
-
-		dot_color = waveForm_color | 0x040404 ;
-		for ( i=0; i<xy_nn; i++ )
-		{
-			x = xy_data[i].x ;
-			y = xy_data[i].y ;
-			DrawBar( g_waveForm_DC, x-1, y-1, x+1, y+1, dot_color, PS_SOLID, R2_COPYPEN ) ;
-		}
-	}
-	DoEventProc() ;
-}
-//////////////////////////////////////////////////////////////////////
 void waveForm_reshow( long dot_show_flag )
 {
 
@@ -6558,7 +6030,7 @@ void do_pcmData_in( short *pcm_data, long pcm_len )
 			g_note_nn ++ ;
 			if ( g_waveForm_save>0 )
 			{
-				sprintf( g_note_file, "d:\\hhs-%05ld.wav", g_note_nn ) ;
+				sprintf( g_note_file, "z:\\hhs-%05ld.wav", g_note_nn ) ;
 				WriteBufToFile( g_note_file, pcm_data, 0 ) ;
 			}
 		}
@@ -6630,7 +6102,7 @@ void do_pcmData_in_new( short *pcm_data, long pcm_len )
 			g_note_nn ++ ;
 			if ( g_waveForm_save>0 )
 			{
-				sprintf( g_note_file, "d:\\hhs-%05ld.wav", g_note_nn ) ;
+				sprintf( g_note_file, "z:\\hhs-%05ld.wav", g_note_nn ) ;
 				WriteBufToFile( g_note_file, pcm_data, 0 ) ;
 			}
 		}
@@ -7095,5 +6567,56 @@ void do_new_show_vars_proc()
 
 	}
 }
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+TFreqByPcm	*g_fbp ;
+//////////////////////////////////////////////////////////////////////
+void init_fbp()
+{
+	g_fbp = new TFreqByPcm ;
+}
+//////////////////////////////////////////////////////////////////////
+long do_test_wave_proc( char *wav_file )
+{
+	long	nSize, nOff, ff ;
+
+	if ( do_task( 201, "" )>0 )
+	{
+		sscanf( g_waveForm_rect_vars, "%lu %lu", &g_waveForm_aa, &g_waveForm_bb ) ;
+		strcpy( g_waveForm_rect_vars, "" ) ;
+	}
+
+	nOff = 44 ;
+	nSize = Get_FileSize( wav_file ) ;
+
+	nSize -= nOff ;
+	ReadBufFromFile( wav_file, g_pcm_data, nOff, nSize ) ;
+
+	ff = g_fbp->GetFreqFromPcm( (short*)g_pcm_data, nSize/2, "do_test_wave_proc" ) ;
+
+	if ( ff<0 ) 
+	{
+	}
+	return ( 0 ) ;
+}
+//////////////////////////////////////////////////////////////////////
+long test_proc( char *DataValue )
+{
+
+	long	vv ;
+	sscanf( DataValue, "%ld", &vv ) ;
+
+//	do_wave_data_proc( vv ) ;
+
+	do_test_wave_proc( "Z:\\d5\\Tuner\\testData\\test\\test2.wav" ) ;
+
+	return ( 0 ) ;
+}
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
