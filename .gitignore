@@ -97,3 +97,5 @@ modules/
 *.opt
 
 *.plg
+
+*.bmp
