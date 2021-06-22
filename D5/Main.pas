@@ -24,13 +24,17 @@ type
     Edit1: TEdit;
     Panel_Info: TPanel;
     Timer_Close: TTimer;
-    Panel_WaveForm: TMyPanel0;
     Panel_DataInfo: TMyPanel0;
     Button1: TButton;
     Button2: TButton;
     Button3: TButton;
     Button4: TButton;
     Panel_Msg: TPanel;
+    Panel_WaveFormBase: TPanel;
+    ScrollBarWaveForm: TScrollBar;
+    Image_WaveForm: TImage;
+    Panel_WaveForm: TMyPanel0;
+    EditZoomValue: TEdit;
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure FormResize(Sender: TObject);
@@ -50,6 +54,10 @@ type
     procedure Button3Click(Sender: TObject);
     procedure Button4Click(Sender: TObject);
     procedure Panel_WaveFormRefresh(Sender: TObject);
+    procedure ScrollBarWaveFormScroll(Sender: TObject;
+      ScrollCode: TScrollCode; var ScrollPos: Integer);
+    procedure EditZoomValueExit(Sender: TObject);
+    procedure EditZoomValueEnter(Sender: TObject);
   private
 
     FWndProc  : TWndMethod ;
@@ -74,6 +82,9 @@ type
     procedure do_all_wave_test;
     procedure do_save_waveForm_bmpFile( sv: integer );
     procedure Wave_and_Data_Resize_proc;
+    procedure Reset_ScrollBarVar;
+    procedure ResizeIamge_Proc;
+    procedure SetImageSizeVars;
     { Private declarations }
   public
     { Public declarations }
@@ -93,6 +104,8 @@ var
   f_UI_BorderWidth: integer=15 ;
   f_freq_show_fmt : string='3.2' ;
 
+  f_ZoomValue : string ;
+
   f_taf_dataValue : TTAF_dataValue=nil ;
 
   f_audio_open_flag : integer=0 ;
@@ -106,7 +119,8 @@ procedure TfrmMain.do_save_waveForm_bmpFile( sv: integer ) ;
 var
   bmpFile : string ;
 begin
-  bmpFile := '' ;
+  bmpFile := pchar(sv) ;
+  Image_WaveForm.Picture.LoadFromFile( bmpFile ) ;
 end ;
 ////////////////////////////////////////////////////////////////////////////////
 procedure TfrmMain.FireEvent( sn, sv: integer );
@@ -184,12 +198,17 @@ end ;
 ////////////////////////////////////////////////////////////////////////////////
 procedure TfrmMain.ReadIniValue;
 begin
+
   ReadIniList( gIniFile ) ;
+
   gInitFlag := GetIniValue( 'Settings', 'InitFlag', '' ) ;
   Edit1.Text := GetIniValue( 'Settings', 'Edit1', '0' ) ;
+  EditZoomValue.Text := GetIniValue( 'Settings', 'EditZoomValue', '4' ) ;
+
   hs := Ths.Create ;
   hs.a := 1 ;
   hs.b := 2 ;
+
 end ;
 ////////////////////////////////////////////////////////////////////////////////
 procedure TfrmMain.WriteIniValue;
@@ -200,6 +219,7 @@ begin
   end ;
 
   SetIniValue( 'Settings', 'Edit1', trim(Edit1.text) ) ;
+  SetIniValue( 'Settings', 'EditZoomValue', trim(EditZoomValue.text) ) ;
   WriteIniList( gIniFile, 'Settings' ) ;
 end ;
 ////////////////////////////////////////////////////////////////////////////////
@@ -221,7 +241,6 @@ begin
 
   ReadIniValue ;
 
-//  gExeFile0 := 'D:\vlsDesk\vlsDesk.exe' ;
   gExePath0 := ExtractFilePath( gExeFile0 ) ;
 
   InitHsZip ;
@@ -283,31 +302,18 @@ var
     aBMP  : TBitMap ;
 begin
 
-{
-  Panel_Host_IP_Setup.Visible := false ;
-  Panel_Host_IP_Setup.BevelOuter := bvNone ;
-  Panel_Host_IP_Setup.caption := '' ;
+  Panel_WaveFormBase.Top := f_CaptionHeight + f_UI_BorderWidth div 2 -2 ;
+  Panel_WaveFormBase.Left := f_UI_BorderWidth ;
+  Panel_WaveFormBase.Color := $00101010 ;
 
-  Panel_Host_Connect.Visible := false ;
-  Panel_Host_Connect.BevelOuter := bvNone ;
-  Panel_Host_Connect.caption := '' ;
+  Image_WaveForm.Align := alNone ;
+  Image_WaveForm.Top := 5 ;
+  Image_WaveForm.left := 0 ;
 
-  Panel_Uninstall.Visible := false ;
-  Panel_Uninstall.BevelOuter := bvNone ;
-  Panel_Uninstall.caption := '' ;
+  Panel_WaveForm.Top := -20 ;
+  Panel_WaveForm.Left := -20 ;
 
-}
-
-//  Panel_WaveForm.BevelOuter := bvNone ;
-//  Panel_WaveForm.caption := '' ;
-  Panel_WaveForm.Top := f_CaptionHeight + f_UI_BorderWidth div 2 -2 ;
-  Panel_WaveForm.Left := f_UI_BorderWidth ;
-
-
-//  Panel_DataInfo.BevelOuter := bvNone ;
-//  Panel_DataInfo.caption := '' ;
   Panel_DataInfo.Left := f_UI_BorderWidth ;
-//  Panel_DataInfo.CanFocus := false ;
   Panel_DataInfo.DoubleBuffered := true ;
 
   Panel_Info.Visible := true ;
@@ -396,17 +402,20 @@ begin
 
   // taf_open
   sv := inttostr(Cardinal(frmMain.handle))+ // callback message event handle
+//        ' ' + inttostr(Cardinal(Image_WaveForm.Canvas.Handle)) +
         ' ' + inttostr(Cardinal(Panel_WaveForm.handle)) +
         ' ' + inttostr(Cardinal(Panel_DataInfo.handle)) +
         ' ' + f_freq_show_fmt +
         '' ;
   TAF_Set_DV( 'COM_OPEN', sv ) ;
 
+
   // waveForm_vars
   sv := HexToStr( integer(Panel_WaveForm.color) ) + ' ' +   // dataInfo_backColor
         ' 宋体 ' +  // 字体名称
         '' ;
   TAF_Set_DV( 'COM_WAVEFORM_VARS', sv ) ;
+  
 
   // dataInfo_vars
   sv := HexToStr( integer(Panel_DataInfo.color) ) + ' ' +   // dataInfo_backColor
@@ -510,26 +519,50 @@ begin
   bh := f_CaptionHeight ; // 界面抬头的高度
   ba := f_UI_BorderWidth ;
   
-  bb := Panel_WaveForm.Parent.Height - ( bh+ba+ba div 2 ) ;
+  bb := Panel_WaveFormBase.Parent.Height - ( bh+ba+ba div 2 ) ;
 
   bb := bb * 2 ;
 
-  Panel_WaveForm.SetBounds( Panel_WaveForm.Left,
-                            Panel_WaveForm.Top,
-                            Panel_WaveForm.Parent.Width - ba*2,
-                            bb div 2 ) ;
-//  Panel_WaveForm.width := Panel_WaveForm.Parent.Width - ba*2 ;
-//  Panel_WaveForm.Height := bb div 2 ;
+  Panel_WaveFormBase.SetBounds( Panel_WaveFormBase.Left,
+                                Panel_WaveFormBase.Top,
+                                Panel_WaveFormBase.Parent.Width - ba*2,
+                                bb div 2 ) ;
+  image_WaveForm.Width := image_WaveForm.Parent.Width*strtoint(EditZoomValue.Text) ;
+  image_WaveForm.Height := image_WaveForm.Parent.Height ;
 
   Panel_DataInfo.SetBounds( Panel_DataInfo.Left,
-                            Panel_WaveForm.Height + bh + ba div 2 + 2,
-                            Panel_WaveForm.width,
+                            Panel_WaveFormBase.Height + bh + ba div 2 + 2,
+                            Panel_WaveFormBase.width,
                             bb div 2 ) ;
-
-//  Panel_DataInfo.width := Panel_WaveForm.width ;
-//  Panel_DataInfo.Height := bb div 2 ;
-//  Panel_DataInfo.Top := Panel_WaveForm.Height + bh + ba div 2 + 2 ;
-  
+end ;
+////////////////////////////////////////////////////////////////////////////////
+procedure TfrmMain.ScrollBarWaveFormScroll(Sender: TObject; ScrollCode: TScrollCode; var ScrollPos: Integer);
+begin
+  H_ScrollBar_Scroll( ScrollBarWaveForm, ScrollCode, ScrollPos, Image_WaveForm ) ;
+end;
+////////////////////////////////////////////////////////////////////////////////
+procedure TfrmMain.Reset_ScrollBarVar;
+begin
+  H_ScrollBar_Vars( ScrollBarWaveForm, Panel_WaveFormBase, Image_WaveForm ) ;
+end ;
+////////////////////////////////////////////////////////////////////////////////
+procedure TfrmMain.SetImageSizeVars;
+var
+  ss  : string ;
+begin
+  if ( gg_RunFlag>0 ) then begin
+    ss := inttostr( image_WaveForm.width ) + ' '+
+          inttostr( image_WaveForm.height ) + ' '+
+          '' ;
+    TAF_Set_DV( 'COM_WAVEFORM_RECT_VARS', ss ) ;
+  end ;
+end ;
+////////////////////////////////////////////////////////////////////////////////
+procedure TfrmMain.ResizeIamge_Proc;
+begin
+  Reset_Other_Panels_Position ;
+  SetImageSizeVars ;
+  Reset_ScrollBarVar ;
 end ;
 ////////////////////////////////////////////////////////////////////////////////
 procedure TfrmMain.FormResize_Proc;
@@ -537,12 +570,25 @@ begin
   if ( gg_firstShow>0 ) then begin
     SetWndFrame( self, -1, 2, 2, 2, 11, 'out_all' ) ;
     CenterControl_XY( TWinControl(Panel_Info), 0, 6) ;
-    Reset_Other_Panels_Position ;
 
-    Edit1.Width := Edit1.parent.width-Edit1.Left-100 ;
+    EditZoomValue.Left := EditZoomValue.parent.width-EditZoomValue.width-100 ;
+    Edit1.Width := EditZoomValue.Left-Edit1.Left-5 ;
+    ResizeIamge_Proc ;
   end ;
 end ;
 ////////////////////////////////////////////////////////////////////////////////
+procedure TfrmMain.EditZoomValueEnter(Sender: TObject);
+begin
+  f_ZoomValue := trim(EditZoomValue.Text) ;
+end;
+////////////////////////////////////////////////////////////////////////////////
+procedure TfrmMain.EditZoomValueExit(Sender: TObject);
+begin
+  if ( f_ZoomValue<>trim(EditZoomValue.Text) ) then begin
+    ScrollBarWaveForm.Position := 0 ;
+    ResizeIamge_Proc ;
+  end ;
+end;
 ////////////////////////////////////////////////////////////////////////////////
 procedure TfrmMain.FormResize(Sender: TObject);
 begin
@@ -604,7 +650,10 @@ var
     ss    : string ;
 begin
   ss := trim(Edit1.Text) ;
-  TAF_Set_DV( 'COM_TEST2', ss ) ;
+//  TAF_Set_DV( 'COM_TEST2', ss ) ;
+  ss := ss + '.bmp' ;
+  Image_WaveForm.Picture.LoadFromFile( ss ) ;
+  Image_WaveForm.Refresh ;
 end;
 ////////////////////////////////////////////////////////////////////////////////
 procedure TfrmMain.Button3Click(Sender: TObject);
@@ -631,8 +680,8 @@ var
   ss  : string ;
 begin
   if ( gg_RunFlag>0 ) then begin
-    ss := inttostr( Panel_WaveForm.width ) + ' '+
-          inttostr( Panel_WaveForm.height ) + ' '+
+    ss := inttostr( image_WaveForm.width ) + ' '+
+          inttostr( image_WaveForm.height ) + ' '+
           '' ;
     TAF_Set_DV( 'COM_WAVEFORM_RECT_VARS', ss ) ;
   end ;
@@ -655,8 +704,8 @@ var
   ss  : string ;
 begin
   if ( gg_RunFlag>0 ) then begin
-    ss := inttostr( Panel_WaveForm.width ) + ' '+
-          inttostr( Panel_WaveForm.height ) + ' '+
+    ss := inttostr( image_WaveForm.width ) + ' '+
+          inttostr( image_WaveForm.height ) + ' '+
           inttostr( Panel_DataInfo.width ) + ' '+
           inttostr( Panel_DataInfo.height ) + ' '+
           '' ;

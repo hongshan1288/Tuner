@@ -44,15 +44,6 @@ object frmMain: TfrmMain
     OnNorClick = Panel_BaseNorClick
     OnMinClick = Panel_BaseMinClick
     OnMenuClick = Panel_BaseMenuClick
-    object Panel_WaveForm: TMyPanel0
-      Left = 216
-      Top = 40
-      Width = 40
-      Height = 30
-      Color = 1052688
-      OnResize = Panel_WaveFormResize
-      OnRefresh = Panel_WaveFormRefresh
-    end
     object Panel_DataInfo: TMyPanel0
       Left = 216
       Top = 72
@@ -68,7 +59,7 @@ object frmMain: TfrmMain
       Width = 55
       Height = 22
       Caption = 'Test'
-      TabOrder = 4
+      TabOrder = 3
       OnClick = Button1Click
     end
     object Edit1: TEdit
@@ -85,7 +76,7 @@ object frmMain: TfrmMain
       Width = 55
       Height = 22
       Caption = 'Test2'
-      TabOrder = 5
+      TabOrder = 4
       OnClick = Button2Click
     end
     object Button3: TButton
@@ -94,7 +85,7 @@ object frmMain: TfrmMain
       Width = 55
       Height = 22
       Caption = 'Test3'
-      TabOrder = 6
+      TabOrder = 5
       OnClick = Button3Click
     end
     object Button4: TButton
@@ -103,7 +94,7 @@ object frmMain: TfrmMain
       Width = 55
       Height = 22
       Caption = 'Test4'
-      TabOrder = 7
+      TabOrder = 6
       OnClick = Button4Click
     end
     object Panel_Info: TPanel
@@ -123,15 +114,60 @@ object frmMain: TfrmMain
     end
     object Panel_Msg: TPanel
       Left = 28
-      Top = 100
+      Top = 116
       Width = 553
       Height = 89
       BevelInner = bvLowered
       BorderWidth = 5
       Caption = 'Panel_Msg'
       Color = clSilver
-      TabOrder = 8
+      TabOrder = 7
       Visible = False
+    end
+    object Panel_WaveFormBase: TPanel
+      Left = 312
+      Top = 30
+      Width = 193
+      Height = 59
+      BevelOuter = bvNone
+      Caption = 'Panel_WaveFormBase'
+      Color = clGray
+      TabOrder = 8
+      object Image_WaveForm: TImage
+        Left = 0
+        Top = 16
+        Width = 105
+        Height = 105
+      end
+      object ScrollBarWaveForm: TScrollBar
+        Left = 0
+        Top = 0
+        Width = 193
+        Height = 16
+        Align = alTop
+        PageSize = 0
+        TabOrder = 0
+        OnScroll = ScrollBarWaveFormScroll
+      end
+      object Panel_WaveForm: TMyPanel0
+        Left = 153
+        Top = 29
+        Width = 10
+        Height = 10
+        Color = 1052688
+        OnResize = Panel_DataInfoResize
+        OnRefresh = Panel_DataInfoRefresh
+      end
+    end
+    object EditZoomValue: TEdit
+      Left = 489
+      Top = 3
+      Width = 48
+      Height = 20
+      TabOrder = 9
+      Text = 'EditZoomValue'
+      OnEnter = EditZoomValueEnter
+      OnExit = EditZoomValueExit
     end
   end
   object Timer_Close: TTimer

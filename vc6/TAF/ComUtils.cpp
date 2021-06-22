@@ -8,8 +8,14 @@
 HWND	g_CallBack_Handle=NULL ;
 HWND	g_waveForm_wnd, g_dataInfo_wnd ;
 HDC		g_waveForm_DC, g_dataInfo_DC ;
+HDC		g_waveForm_DC_mem ;
 long	g_waveForm_aa, g_waveForm_bb ;
 long	g_dataInfo_aa, g_dataInfo_bb ;
+long	g_waveForm_backColor, g_dataInfo_backColor ;
+
+LPBYTE	g_waveForm_pan_dc_buf ;
+long	g_waveForm_pan_dc_size ;
+long	g_waveForm_pan_aa, g_waveForm_pan_bb ;
 
 short	*g_int_data ;
 
@@ -324,7 +330,7 @@ HPEN __CreatePen( long line_style, long line_width, long line_color )
 	return ( hpen ) ;
 }
 ////////////////////////////////////////////////////////////////////////////////
-void Polyline( HDC hdc, POINT *xy, long xy_nn, long line_width, long line_color, long line_style, long line_mode  )
+void PolyLine( HDC hdc, POINT *xy, long xy_nn, long line_width, long line_color, long line_style, long line_mode  )
 {
 
 	HPEN	hpen = __CreatePen( line_style, line_width, line_color ) ;
@@ -524,7 +530,7 @@ void draw_WaveForm_proc( short *pcm_data, long pcm_len, long pcm_color, long x_s
 
 	}
 
-	Polyline( g_waveForm_DC, g_waveForm_xy, ii, 1, pcm_color, PS_SOLID, R2_COPYPEN ) ;
+	PolyLine( g_waveForm_DC, g_waveForm_xy, ii, 1, pcm_color, PS_SOLID, R2_COPYPEN ) ;
 	for ( i=0; i<ii; i++ )
 	{
 		DrawLine( g_waveForm_DC, g_waveForm_xy[i].x, g_waveForm_xy[i].y, g_waveForm_xy[i].x, g_waveForm_xy[i].y, 1, RGB(0,250,200), PS_SOLID, R2_COPYPEN ) ;
@@ -651,7 +657,7 @@ void show_waveForm_data( long dot_show_flag, POINT *xy_data, long xy_nn, long li
 
 	long	y0 = g_waveForm_bb / 2 ;
 
-	Polyline( g_waveForm_DC, xy_data, xy_nn, line_width, waveForm_color, PS_SOLID, R2_COPYPEN ) ;
+	PolyLine( g_waveForm_DC, xy_data, xy_nn, line_width, waveForm_color, PS_SOLID, R2_COPYPEN ) ;
 	DrawLine( g_waveForm_DC, 0, y0, g_waveForm_aa-1, y0, line_width, dc_line_color, PS_SOLID, R2_COPYPEN ) ;
 
 	if ( dot_show_flag>0 )
@@ -672,6 +678,158 @@ void show_waveForm_data( long dot_show_flag, POINT *xy_data, long xy_nn, long li
 void show_waveForm_xy( long dot_show_flag, POINT *xy_data, long xy_nn, long line_width, long waveForm_color, long dc_line_color )
 {
 	show_waveForm_data( dot_show_flag, xy_data, xy_nn, line_width, waveForm_color, dc_line_color ) ;
+}
+//////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+long SaveBMPFile_ex( char pFileName[], long bits, long width, long height, LPVOID BmpBuf )
+{
+
+	BITMAPFILEHEADER	bmpFileHeader;
+    HANDLE				bmpHandle ;
+	long				aBmpDataSize ;
+	BITMAPINFO			mBmpInfo ;
+
+
+	mBmpInfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER) ;
+//	mBmpInfo.bmiHeader.biWidth = 100 ;
+//	mBmpInfo.bmiHeader.biHeight = 100 ;
+	mBmpInfo.bmiHeader.biPlanes = 1 ;
+	mBmpInfo.bmiHeader.biBitCount = (WORD)bits ; 
+	mBmpInfo.bmiHeader.biClrImportant = 0 ;
+	mBmpInfo.bmiHeader.biXPelsPerMeter = 0 ;
+	mBmpInfo.bmiHeader.biYPelsPerMeter = 0 ; 
+	mBmpInfo.bmiHeader.biCompression = BI_RGB ;
+	mBmpInfo.bmiHeader.biClrUsed = 0 ;
+	mBmpInfo.bmiHeader.biClrImportant = 0 ;
+
+	mBmpInfo.bmiHeader.biWidth = width ;
+	mBmpInfo.bmiHeader.biHeight = height ;
+
+
+
+	bmpHandle = CreateFile( pFileName, 
+								 GENERIC_WRITE,
+								 FILE_SHARE_READ | FILE_SHARE_WRITE,
+								 0,
+								 CREATE_ALWAYS,
+								 FILE_ATTRIBUTE_NORMAL,
+								 0 ) ;
+	if ( bmpHandle==NULL ) 
+		return ( -2 ) ;
+
+	if ( bits==24 )
+		aBmpDataSize = abs(width * height) * 3 ;
+	else
+		aBmpDataSize = abs(width * height) * 4 ;
+
+	bmpFileHeader.bfType = 0x4d42; //"BM"
+    bmpFileHeader.bfReserved1 = 0;
+    bmpFileHeader.bfReserved2 = 0;
+    bmpFileHeader.bfOffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
+    bmpFileHeader.bfSize = bmpFileHeader.bfOffBits + aBmpDataSize ;
+
+	DWORD	dWriteBytes, dBytes ;
+
+	// Write BMP File Header
+	dWriteBytes = sizeof(BITMAPFILEHEADER) ;
+	if ( !WriteFile( bmpHandle, (LPVOID)(&bmpFileHeader), dWriteBytes, &dBytes, 0 ))
+	{
+		FreeHandle( bmpHandle ) ;
+		return ( -3 ) ;
+	}
+
+	// Write BMP Header Info
+	dWriteBytes = sizeof(BITMAPINFOHEADER) ;
+	if ( !WriteFile( bmpHandle, (LPVOID)(&(mBmpInfo.bmiHeader)), dWriteBytes, &dBytes, 0 ))
+	{
+		FreeHandle( bmpHandle ) ;
+		return ( -4 ) ;
+	}
+
+	// Write BMP Bits Data
+	dWriteBytes = aBmpDataSize ;
+	if ( !WriteFile( bmpHandle, (LPVOID)(BmpBuf), dWriteBytes, &dBytes, 0 ))
+	{
+		FreeHandle( bmpHandle ) ;
+		return ( -5 ) ;
+	}
+
+    FreeHandle( bmpHandle ) ;
+
+	return ( 0 ) ;
+}
+/////////////////////////////////////////////////////////////////////////////
+long SaveBMPFile24( char pFileName[], long width, long height, LPVOID BmpBuf )
+{
+	DeleteFile( pFileName ) ;
+	return ( SaveBMPFile_ex( pFileName, 24, width, height, BmpBuf ) ) ;
+}
+/////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+long SaveBMPFile32( char pFileName[], long width, long height, LPVOID BmpBuf )
+{
+	DeleteFile( pFileName ) ;
+	return ( SaveBMPFile_ex( pFileName, 32, width, height, BmpBuf ) ) ;
+}
+//////////////////////////////////////////////////////////////////////
+long make_pan_dc_memory_buf( HDC pan_dc, long aa, long bb )
+{
+
+	// 1.首先获得兼容的 HDC
+	HDC hDC = pan_dc ;
+
+	// 2.创建兼容的HDC
+	HDC memDC = CreateCompatibleDC(hDC);
+
+    BITMAPINFO	bitmapinfo ;
+	BITMAP		BM ;
+
+    // 3.设置位图BITMAP的参数
+	bitmapinfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+    bitmapinfo.bmiHeader.biBitCount = 24 ;
+    bitmapinfo.bmiHeader.biWidth = aa ;
+    bitmapinfo.bmiHeader.biHeight = bb ;
+    bitmapinfo.bmiHeader.biPlanes = 1 ;
+    bitmapinfo.bmiHeader.biCompression=BI_RGB ;
+    bitmapinfo.bmiHeader.biXPelsPerMeter=0 ;
+    bitmapinfo.bmiHeader.biYPelsPerMeter=0 ;
+    bitmapinfo.bmiHeader.biClrUsed=0;
+    bitmapinfo.bmiHeader.biClrImportant=0;
+    bitmapinfo.bmiHeader.biSizeImage = 3*aa*bb ;
+
+    // 4.创建位图区（在内存中）
+    HBITMAP memBM = ::CreateDIBSection( memDC, &(bitmapinfo), 0, NULL, 0, 0);
+ 
+    // 5.将兼容DC与内存位图连接起来
+    SelectObject(memDC, memBM) ;
+
+    // 6.设法获取位图缓冲区地址
+	GetObject( memBM, sizeof( BITMAP ), &(BM) ) ;
+	g_waveForm_pan_dc_buf = (LPBYTE)BM.bmBits ;
+
+	g_waveForm_DC_mem = memDC ;
+	g_waveForm_pan_dc_size = bitmapinfo.bmiHeader.biSizeImage ;
+
+/**
+// 此为测试代码	
+
+	memset( g_waveForm_pan_dc_buf, 0x88, bitmapinfo.bmiHeader.biSizeImage ) ;
+	SelectObject( memDC, GetStockObject(GRAY_BRUSH)); 
+	Rectangle( memDC, 0, 0, 50, 30 ) ;
+SaveBMPFile24( "z:\\hhs-1.bmp", aa, bb, g_waveForm_pan_dc_buf ) ;
+**/
+	return ( 0 ) ;
+}
+//////////////////////////////////////////////////////////////////////
+void clear_pan_dc_memory_buf()
+{
+	memset( g_waveForm_pan_dc_buf, 0x00, g_waveForm_pan_dc_size ) ;
+}
+//////////////////////////////////////////////////////////////////////
+void clear_waveForm_area()
+{
+	clear_pan_dc_memory_buf() ; 
+	DrawBar( g_waveForm_DC, 0, 0, g_waveForm_aa-1, g_waveForm_bb-1, g_waveForm_backColor, PS_SOLID, R2_COPYPEN ) ;
 }
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////

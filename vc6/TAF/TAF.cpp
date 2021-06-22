@@ -41,7 +41,7 @@ void test6_proc( char *DataValue ) ;
 
 long do_test_wave_proc( char *wav_file ) ;
 
-void	audio_close_proc() ;
+void audio_close_proc() ;
 void clear_wave_area() ;
 void clear_freq_area() ;
 
@@ -231,9 +231,6 @@ struct	FREQ_DATA
 
 //////////////////////////////////////////////////////////////////////
 
-LPBYTE	g_waveForm_pan_dc_buf ;
-long	g_waveForm_pan_aa, g_waveForm_pan_bb ;
-
 
 short	g_pcm_data_half_ii=59 ;
 //short	g_pcm_data_half_ii=69 ;
@@ -242,7 +239,6 @@ Note_Info	g_note_info[NOTE_INFO_MAX] ;
 
 
 long	g_ExitFlag = 0 ;
-long	g_waveForm_backColor, g_dataInfo_backColor ;
 char	g_waveForm_fontName[50], g_dataInfo_fontName[50] ;
 
 long	g_dataInfo_cx ; // 数据显示区的中间分隔位置
@@ -565,95 +561,6 @@ static	long tick_ThreadProc()
 }
 //////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
-long SaveBMPFile_ex( char pFileName[], long bits, long width, long height, LPVOID BmpBuf )
-{
-
-	BITMAPFILEHEADER	bmpFileHeader;
-    HANDLE				bmpHandle ;
-	long				aBmpDataSize ;
-	BITMAPINFO			mBmpInfo ;
-
-
-	mBmpInfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER) ;
-//	mBmpInfo.bmiHeader.biWidth = 100 ;
-//	mBmpInfo.bmiHeader.biHeight = 100 ;
-	mBmpInfo.bmiHeader.biPlanes = 1 ;
-	mBmpInfo.bmiHeader.biBitCount = (WORD)bits ; 
-	mBmpInfo.bmiHeader.biClrImportant = 0 ;
-	mBmpInfo.bmiHeader.biXPelsPerMeter = 0 ;
-	mBmpInfo.bmiHeader.biYPelsPerMeter = 0 ; 
-	mBmpInfo.bmiHeader.biCompression = BI_RGB ;
-	mBmpInfo.bmiHeader.biClrUsed = 0 ;
-	mBmpInfo.bmiHeader.biClrImportant = 0 ;
-
-	mBmpInfo.bmiHeader.biWidth = width ;
-	mBmpInfo.bmiHeader.biHeight = height ;
-
-
-
-	bmpHandle = CreateFile( pFileName, 
-								 GENERIC_WRITE,
-								 FILE_SHARE_READ | FILE_SHARE_WRITE,
-								 0,
-								 CREATE_ALWAYS,
-								 FILE_ATTRIBUTE_NORMAL,
-								 0 ) ;
-	if ( bmpHandle==NULL ) 
-		return ( -2 ) ;
-
-	if ( bits==24 )
-		aBmpDataSize = abs(width * height) * 3 ;
-	else
-		aBmpDataSize = abs(width * height) * 4 ;
-
-	bmpFileHeader.bfType = 0x4d42; //"BM"
-    bmpFileHeader.bfReserved1 = 0;
-    bmpFileHeader.bfReserved2 = 0;
-    bmpFileHeader.bfOffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
-    bmpFileHeader.bfSize = bmpFileHeader.bfOffBits + aBmpDataSize ;
-
-	DWORD	dWriteBytes, dBytes ;
-
-	// Write BMP File Header
-	dWriteBytes = sizeof(BITMAPFILEHEADER) ;
-	if ( !WriteFile( bmpHandle, (LPVOID)(&bmpFileHeader), dWriteBytes, &dBytes, 0 ))
-	{
-		FreeHandle( bmpHandle ) ;
-		return ( -3 ) ;
-	}
-
-	// Write BMP Header Info
-	dWriteBytes = sizeof(BITMAPINFOHEADER) ;
-	if ( !WriteFile( bmpHandle, (LPVOID)(&(mBmpInfo.bmiHeader)), dWriteBytes, &dBytes, 0 ))
-	{
-		FreeHandle( bmpHandle ) ;
-		return ( -4 ) ;
-	}
-
-	// Write BMP Bits Data
-	dWriteBytes = aBmpDataSize ;
-	if ( !WriteFile( bmpHandle, (LPVOID)(BmpBuf), dWriteBytes, &dBytes, 0 ))
-	{
-		FreeHandle( bmpHandle ) ;
-		return ( -5 ) ;
-	}
-
-    FreeHandle( bmpHandle ) ;
-
-	return ( 0 ) ;
-}
-/////////////////////////////////////////////////////////////////////////////
-long SaveBMPFile( char pFileName[], long width, long height, LPVOID BmpBuf )
-{
-	return ( SaveBMPFile_ex( pFileName, 24, width, height, BmpBuf ) ) ;
-}
-/////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
-long SaveBMPFile32( char pFileName[], long width, long height, LPVOID BmpBuf )
-{
-	return ( SaveBMPFile_ex( pFileName, 32, width, height, BmpBuf ) ) ;
-}
-/////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
@@ -900,58 +807,6 @@ long	TAF_DATA_VALUE( char *DataName, char *DataValue )
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////
-long make_pan_dc_memory_buf( HDC pan_dc, long aa, long bb )
-{
-
-	// 1.首先获得兼容的 HDC
-	HDC hDC = pan_dc ;
-
-	// 2.创建兼容的HDC
-	HDC memDC = CreateCompatibleDC(hDC);
-
-    BITMAPINFO	bitmapinfo ;
-	BITMAP		BM ;
-
-    // 3.设置位图BITMAP的参数
-	bitmapinfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-    bitmapinfo.bmiHeader.biBitCount = 24 ;
-    bitmapinfo.bmiHeader.biWidth = aa ;
-    bitmapinfo.bmiHeader.biHeight = bb ;
-    bitmapinfo.bmiHeader.biPlanes = 1 ;
-    bitmapinfo.bmiHeader.biCompression=BI_RGB ;
-    bitmapinfo.bmiHeader.biXPelsPerMeter=0 ;
-    bitmapinfo.bmiHeader.biYPelsPerMeter=0 ;
-    bitmapinfo.bmiHeader.biClrUsed=0;
-    bitmapinfo.bmiHeader.biClrImportant=0;
-    bitmapinfo.bmiHeader.biSizeImage = 3*aa*bb ;
-
-    // 4.创建位图区（在内存中）
-    HBITMAP memBM = ::CreateDIBSection( memDC, &(bitmapinfo), 0, NULL, 0, 0);
- 
-    // 5.将兼容DC与内存位图连接起来
-    SelectObject(memDC, memBM) ;
-
-    // 6.设法获取位图缓冲区地址
-	GetObject( memBM, sizeof( BITMAP ), &(BM) ) ;
-	g_waveForm_pan_dc_buf = (LPBYTE)BM.bmBits ;
-
-//	m_DispBase.memDC = memDC ;
-//	m_DispBase.memBM = memBM ;
-
-//	m_pan_gdi->set_hdc_vars( m_DispBase.memDC, m_DispBase.pan_dc_buf, m_DispBase.max_aa, m_DispBase.max_bb ) ;
-
-/**
-// 此为测试代码	
-
-	memset( m_DispBase.pan_dc_buf, 0x88, m_DispBase.bitmapinfo.bmiHeader.biSizeImage ) ;
-	SelectObject( memDC, GetStockObject(GRAY_BRUSH)); 
-	Rectangle( m_DispBase.memDC, 0, 0, 50, 30 ) ;
-SaveBMPFile( "d:\\hhs-1.bmp", m_DispBase.max_aa, m_DispBase.max_bb, m_DispBase.pan_dc_buf ) ;
-**/
-	return ( 0 ) ;
-}
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
@@ -1261,6 +1116,7 @@ long open_proc( char *DataValue )
 
 	g_waveForm_wnd = (HWND)wf_wnd ;
 	g_waveForm_DC = GetDC( g_waveForm_wnd ) ;
+//	g_waveForm_DC = (HDC)wf_wnd ;
 
 	g_dataInfo_wnd = (HWND)di_wnd ;
 	g_dataInfo_DC = GetDC( g_dataInfo_wnd ) ;
@@ -1273,7 +1129,6 @@ long open_proc( char *DataValue )
 	strcpy( g_waveForm_rect_vars, "" ) ;
 
 	strcpy( g_new_rect_vars, "" ) ;
-	
 
 	strcpy( g_logFile, "..\\testData\\hhs.log" ) ;
 	strcpy( g_logFile2, "..\\testData\\hhs2.log" ) ;
@@ -1387,7 +1242,7 @@ void show_shortData_proc( short *data, long data_len, long data_color, long x_st
 
 	}
 
-	Polyline( g_waveForm_DC, g_waveForm_xy, ii, 1, data_color, PS_SOLID, R2_COPYPEN ) ;
+	PolyLine( g_waveForm_DC, g_waveForm_xy, ii, 1, data_color, PS_SOLID, R2_COPYPEN ) ;
 	for ( i=0; i<ii; i++ )
 	{
 		DrawLine( g_waveForm_DC, g_waveForm_xy[i].x, g_waveForm_xy[i].y, g_waveForm_xy[i].x, g_waveForm_xy[i].y, 1, RGB(0,250,200), PS_SOLID, R2_COPYPEN ) ;
@@ -2567,7 +2422,7 @@ void show_mm_data_proc( MM_DATA *mm_data, long mm_si, long mm_ei, long xx_len, l
 		ii++ ;
 	}
 
-	Polyline( g_waveForm_DC, g_xy_data, ii, 1, mm_color, PS_SOLID, R2_COPYPEN ) ;
+	PolyLine( g_waveForm_DC, g_xy_data, ii, 1, mm_color, PS_SOLID, R2_COPYPEN ) ;
 
 }
 //////////////////////////////////////////////////////////////////////
@@ -2646,7 +2501,7 @@ void show_WaveForm_proc( short *pcm_data, long pcm_len, long data_color )
 	}
 
 
-	Polyline( g_waveForm_DC, g_xy_data, ii, 1, data_color, PS_SOLID, R2_COPYPEN ) ;
+	PolyLine( g_waveForm_DC, g_xy_data, ii, 1, data_color, PS_SOLID, R2_COPYPEN ) ;
 
 	DrawLine( g_waveForm_DC, 0, y0, g_waveForm_aa-1, y0, 1, RGB(125,0,0), PS_SOLID, R2_COPYPEN ) ;
 
@@ -2847,7 +2702,7 @@ void show_zmz_data_proc( ZMZ_DATA *zmz_data, long zmz_nn, long xx_len, long zmz_
 			max_vv = vv ;
 
 	}
-	Polyline( g_waveForm_DC, g_xy_data, ii, 1, zmz_color, PS_SOLID, R2_COPYPEN ) ;
+	PolyLine( g_waveForm_DC, g_xy_data, ii, 1, zmz_color, PS_SOLID, R2_COPYPEN ) ;
 	
 	vv_ratio = 20000/max_vv ;
 
@@ -4153,7 +4008,7 @@ void show_zmz_data_proc_2( ZMZ_DATA *zmz_data, long zmz_nn, long xx_len, long zm
 			max_vv = vv ;
 
 	}
-	Polyline( g_waveForm_DC, g_xy_data, ii, 1, zmz_color, PS_SOLID, R2_COPYPEN ) ;
+	PolyLine( g_waveForm_DC, g_xy_data, ii, 1, zmz_color, PS_SOLID, R2_COPYPEN ) ;
 	
 	vv_ratio = 30000/max_vv ;
 
@@ -5323,7 +5178,7 @@ void show_WaveForm_proc_2_ex( short *pcm_data, long i1, long i2, long xxx, long 
 	}
 
 
-	Polyline( g_waveForm_DC, g_xy_data, ii, 1, data_color, PS_SOLID, R2_COPYPEN ) ;
+	PolyLine( g_waveForm_DC, g_xy_data, ii, 1, data_color, PS_SOLID, R2_COPYPEN ) ;
 
 	DrawLine( g_waveForm_DC, 0, y0, g_waveForm_aa-1, y0, 1, RGB(125,0,0), PS_SOLID, R2_COPYPEN ) ;
 
@@ -6473,6 +6328,7 @@ from_proc_prt( g_logFile, "make_waveForm_show_data(0) --------------redraw=%-8ld
 			if ( do_task( 201, "" )>0 )
 			{
 				sscanf( g_waveForm_rect_vars, "%lu %lu", &g_waveForm_aa, &g_waveForm_bb ) ;
+				make_pan_dc_memory_buf( g_waveForm_DC, g_waveForm_aa, g_waveForm_bb ) ;
 				strcpy( g_waveForm_rect_vars, "" ) ;
 			}
 			make_WaveForm_draw_data_new( 1,  g_waveForm_pcm, g_waveForm_pcm_len ) ; // 建立显示波形
@@ -6606,12 +6462,23 @@ long do_test_wave_proc( char *wav_file )
 long test_proc( char *DataValue )
 {
 
-	long	vv ;
-	sscanf( DataValue, "%ld", &vv ) ;
+	if ( do_task( 201, "" )>0 )
+	{
+		sscanf( g_waveForm_rect_vars, "%lu %lu", &g_waveForm_aa, &g_waveForm_bb ) ;
+		make_pan_dc_memory_buf( g_waveForm_DC, g_waveForm_aa, g_waveForm_bb ) ;
+	}
 
-//	do_wave_data_proc( vv ) ;
+	clear_waveForm_area() ;
 
-	do_test_wave_proc( "Z:\\d5\\Tuner\\testData\\test\\test2.wav" ) ;
+	do_test_wave_proc( DataValue ) ;
+
+	char	bmpFile[500] ;
+	sprintf( bmpFile, "%s.bmp", DataValue ) ;
+	DeleteFile( bmpFile ) ;
+	SaveBMPFile24( bmpFile, g_waveForm_aa, g_waveForm_bb, g_waveForm_pan_dc_buf ) ;
+
+	PopEvent( 5001, (long)bmpFile, "make_freq_from_pcm_data()" ) ;
+
 
 	return ( 0 ) ;
 }
