@@ -14,7 +14,7 @@ TFreqByPcm::TFreqByPcm()
 {
 
 	m_MinVV = 1000 ;
-	m_FlatVV = 3270/2 ;
+	m_FlatVV = 3200/4 ;
 
 	m_DC_line_color = RGB( 100, 0, 0 ) ;
 
@@ -33,20 +33,7 @@ TFreqByPcm::TFreqByPcm()
 
 	m_PeriodData_m = 0 ;
 	m_PeriodData_n = 0 ;
-
 	Set_PeriodData_Len( 5000 ) ;
-
-	m_PeriodDataIdx_m = 0 ;
-	m_PeriodDataIdx_n = 0 ;
-	Set_PeriodDataIdx_Len( 500 ) ;
-
-	m_SameData_m = 0 ;
-	m_SameData_n = 0 ;
-	set_SameData_Len( 5000 ) ;
-
-	m_SameDataIdx_m = 0 ;
-	m_SameDataIdx_n = 0 ;
-	set_SameDataIdx_Len( 500 ) ;
 
 	m_pcm_data = NULL ;
 
@@ -283,27 +270,6 @@ void TFreqByPcm::make_PeakData( short *pcm_data, long pcm_len )
 	}
 }
 //////////////////////////////////////////////////////////////////////
-void TFreqByPcm::get_PeakData_vars()
-{
-	long	i ;
-	for ( i=0; i<m_PeakData_m-2; i++ )
-	{
-		if ( m_PeakData[i].y>0 && m_PeakData[i+1].y<0 )
-		{
-			m_PeakData_is = i+1 ;
-			break ;
-		}
-	}
-	for ( i=m_PeakData_m-1; i>=0; i-- )
-	{
-		if ( m_PeakData[i].y<0 && m_PeakData[i-1].y>0 )
-		{
-			m_PeakData_ie = i ;
-			break ;
-		}
-	}
-}
-//////////////////////////////////////////////////////////////////////
 void TFreqByPcm::show_PeakData_Vars( long i, long x, long y )
 {
 	char	ss[100] ;
@@ -376,69 +342,6 @@ void TFreqByPcm::show_PeakData( long pcm_len, long show_color )
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
-long TFreqByPcm::GetFreqFromPcm( short *pcm_data, long pcm_len, char *from_proc )
-{
-
-	if ( check_pcm_data_is_a_noise( pcm_data, pcm_len ) )
-		return ( -1 ) ;
-
-	m_dx = g_waveForm_aa ;
-	m_dx /= pcm_len ;
-
-	m_pcm_data = (short*)GlobalAlloc( GPTR, (pcm_len)*sizeof(short) ) ;
-	__try
-	{
-		CopyMemory( m_pcm_data, pcm_data, pcm_len*sizeof(short) ) ;
-		m_pcm_len = pcm_len ;
-
-		show_PcmData( m_pcm_data, m_pcm_len, RGB(0,20,0), RGB(0,50,0) ) ;
-
-		make_flat_data( m_pcm_data, m_pcm_len ) ;
-		show_PcmData( m_pcm_data, m_pcm_len, RGB(50,50,50), RGB(100,100,100) ) ;
-
-		make_PeriodData( m_pcm_data, m_pcm_len ) ;
-		show_PeriodData( RGB(80,20,20) ) ;
-
-
-//		make_PeakData( m_pcm_data, m_pcm_len ) ;
-//		get_PeakData_vars() ;
-
-//		show_PeakData( m_pcm_len, RGB(150,0,0) ) ;
-
-//		make_pmd_data( m_pcm_data, m_pcm_len ) ;
-
-	}
-	__finally
-	{
-		FreeBuf( m_pcm_data ) ;
-	}
-
-	return ( 0 ) ;
-
-}
-//////////////////////////////////////////////////////////////////////
-void TFreqByPcm::get_PeriodData_vars( short *pcm_data, long pcm_len )
-{
-	long	i ;
-	for ( i=0; i<pcm_len-2; i++ )
-	{
-		if ( pcm_data[i]>0 && pcm_data[i+1]<=0 )
-		{
-			m_Period_is = i+1 ;
-			break ;
-		}
-	}
-	for ( i=pcm_len-1; i>=0; i-- )
-	{
-		if ( pcm_data[i]<0 && pcm_data[i-1]>=0 )
-		{
-			m_Period_ie = i-1 ;
-			break ;
-		}
-	}
-}
-//////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 void TFreqByPcm::Set_PeriodData_Len( long nn )
 {
@@ -471,38 +374,6 @@ long TFreqByPcm::push_PeriodData( long ix, short yy )
 
 }
 //////////////////////////////////////////////////////////////////////
-void TFreqByPcm::Set_PeriodDataIdx_Len( long nn )
-{
-	PeriodDataIdx_Type	*pd ;
-	pd = (PeriodDataIdx_Type*)GlobalAlloc( GPTR, (nn)*sizeof(PeriodDataIdx_Type) ) ;
-	if ( m_PeriodDataIdx_n>0 && m_PeriodDataIdx != NULL ) 
-	{
-		CopyMemory( pd, m_PeriodDataIdx, m_PeriodDataIdx_n*sizeof(PeriodDataIdx_Type) ) ;
-		FreeBuf( m_PeriodDataIdx ) ;
-	}
-	m_PeriodDataIdx = pd ;
-	m_PeriodDataIdx_n = nn ;
-}
-//////////////////////////////////////////////////////////////////////
-long TFreqByPcm::push_PeriodDataIdx( long idx, long ff, short avg_yy )
-{
-
-	PeriodDataIdx_Type	*pd ;
-
-	pd = m_PeriodDataIdx ;
-	pd += m_PeriodDataIdx_m++ ;
-
-	pd->idx = idx ;
-	pd->ff = ff ;
-	pd->avg_yy = avg_yy ;
-
-	if ( m_PeriodDataIdx_m>=m_PeriodDataIdx_n )
-		Set_PeriodDataIdx_Len( m_PeriodDataIdx_n+100 ) ;
-
-	return ( m_PeriodDataIdx_m-1 ) ;
-
-}
-//////////////////////////////////////////////////////////////////////
 long TFreqByPcm::get_PeriodData_yy( short *pcm_data, long ix, long n )
 {
 	double	yy ;
@@ -514,83 +385,85 @@ long TFreqByPcm::get_PeriodData_yy( short *pcm_data, long ix, long n )
 	return ( long( yy/n ) ) ;
 }
 //////////////////////////////////////////////////////////////////////
+void TFreqByPcm::get_PeriodData_vars( short *pcm_data, long pcm_len )
+{
+	long	i ;
+	for ( i=0; i<pcm_len; i++ )
+	{
+		if ( pcm_data[i]==0 )
+		{
+			m_Period_is = i ;
+			break ;
+		}
+	}
+	for ( i=pcm_len-1; i>=0; i-- )
+	{
+		if ( pcm_data[i]<=0 && pcm_data[i-1]>0 )
+		if ( pcm_data[i]==0 )
+		{
+			m_Period_ie = i ;
+			break ;
+		}
+	}
+}
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
 void TFreqByPcm::make_PeriodData( short *pcm_data, long pcm_len )
 {
-	long	i, ii, ff, idx, avg_nn, y0, yy ;
-	double	avg_yy ;
+	long	i, ff, yy, y0 ;
 
 	get_PeriodData_vars( pcm_data, pcm_len ) ;
 
 	m_PeriodData_m = 0 ;
-	m_PeriodDataIdx_m = 0 ;
-	ff = 0 ;
-	y0 = -300000000 ;
 
-	for ( i=0; i<pcm_len; i+=m_Period_dn )
+	ff = 0 ;
+
+	i = m_Period_is ;
+	yy = get_PeriodData_yy( pcm_data, i, m_Period_dn ) ;
+	push_PeriodData( i, (short)yy ) ;
+	ff = 0 ;
+	for ( i=m_Period_is+1; i<m_Period_ie; i++ )
 	{
 		yy = get_PeriodData_yy( pcm_data, i, m_Period_dn ) ;
-		if ( y0 <= -300000000 )
+		if ( ff==0 )
 		{
-			avg_nn = 0 ;
-			avg_yy = 0 ;
-		}
-		else if ( ff==0 )
-		{
-			idx = push_PeriodData( i, (short)yy ) ;
-			if ( yy<y0 )
-			{
-				ii = push_PeriodDataIdx( idx, ff, 0 ) ;
+			if ( yy<0 )
 				ff = -1 ;
-			}
-			else if ( yy>y0 )
+			else if ( yy>0 )
+				ff = 1 ;
+		}
+		else
+		{
+			if ( yy==0 )
 			{
-				ii = push_PeriodDataIdx( idx, ff, 0 ) ;
+				push_PeriodData( i, (short)yy ) ;
+				ff = 0 ;
+			}
+			else if ( y0<0 && yy>0 )
+			{
+				push_PeriodData( i, (short)yy ) ;
 				ff = 1 ;
 			}
-			avg_nn = 0 ;
-			avg_yy = 0 ;
-			avg_nn ++ ;
-			avg_yy += yy ;
-		}
-		else if ( ff>0 )
-		{
-			if ( yy<y0 )
+			else if ( y0>0 && yy<0 )
 			{
-				ii = push_PeriodDataIdx( idx, ff, short(avg_yy/avg_nn) ) ;
+				push_PeriodData( i, (short)yy ) ;
 				ff = -1 ;
-				avg_nn = 0 ;
-				avg_yy = 0 ;
 			}
-			idx = push_PeriodData( i, (short)yy ) ;
-			avg_nn ++ ;
-			avg_yy += yy ;
 		}
-		else if ( ff<0 )
-		{
-			if ( yy>y0 )
-			{
-				ii = push_PeriodDataIdx( idx, ff, short(avg_yy/avg_nn) ) ;
-				ff = 1 ;
-				avg_nn = 0 ;
-				avg_yy = 0 ;
-			}
-			idx = push_PeriodData( i, (short)yy ) ;
-			avg_nn ++ ;
-			avg_yy += yy ;
-		}
-		if ( ii==5 )
-			ii = 5 ;
 		y0 = yy ;
 	}
+	i = m_Period_ie ;
+	yy = get_PeriodData_yy( pcm_data, i, m_Period_dn ) ;
+	push_PeriodData( i, (short)yy ) ;
 }
 //////////////////////////////////////////////////////////////////////
 void TFreqByPcm::show_PeriodData( long show_color )
 {
 	long	i, ix, ix0 ;
 	char	ss[50] ;
-	for ( i=0; i<m_PeriodDataIdx_m; i++ )
+	for ( i=0; i<m_PeriodData_m; i++ )
 	{
-		ix = m_PeriodData[m_PeriodDataIdx[i].idx].ix ;
+		ix = m_PeriodData[i].ix ;
 		if ( i>0 )
 			sprintf( ss, "%ld-%ld-%ld", i, ix, ix-ix0 ) ;
 		else
@@ -628,74 +501,42 @@ void TFreqByPcm::draw_VerticalLine( long ii, long fx, long show_color, char *sa 
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
-void TFreqByPcm::set_SameDataIdx_Len( long nn )
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+long TFreqByPcm::GetFreqFromPcm( short *pcm_data, long pcm_len, char *from_proc )
 {
-	SameDataIdx_Type	*pd ;
-	pd = (SameDataIdx_Type*)GlobalAlloc( GPTR, (nn)*sizeof(SameDataIdx_Type) ) ;
-	if ( m_SameDataIdx_n>0 && m_SameDataIdx != NULL ) 
+
+	if ( check_pcm_data_is_a_noise( pcm_data, pcm_len ) )
+		return ( -1 ) ;
+
+	m_dx = g_waveForm_aa ;
+	m_dx /= pcm_len ;
+
+	m_pcm_data = (short*)GlobalAlloc( GPTR, (pcm_len)*sizeof(short) ) ;
+	__try
 	{
-		CopyMemory( pd, m_SameDataIdx, m_SameDataIdx_n*sizeof(SameDataIdx_Type) ) ;
-		FreeBuf( m_SameDataIdx ) ;
+		CopyMemory( m_pcm_data, pcm_data, pcm_len*sizeof(short) ) ;
+		m_pcm_len = pcm_len ;
+
+		show_PcmData( m_pcm_data, m_pcm_len, RGB(0,20,0), RGB(0,50,0) ) ;
+
+		make_flat_data( m_pcm_data, m_pcm_len ) ;
+		show_PcmData( m_pcm_data, m_pcm_len, RGB(50,50,50), RGB(100,100,100) ) ;
+
+		make_PeriodData( m_pcm_data, m_pcm_len ) ;
+		show_PeriodData( RGB(80,20,20) ) ;
+
+//		make_DiffData() ;
+
 	}
-	m_SameDataIdx = pd ;
-	m_SameDataIdx_n = nn ;
-}
-//////////////////////////////////////////////////////////////////////
-long TFreqByPcm::push_SameDataIdx( long idx, long nn )
-{
-
-	SameDataIdx_Type	*pd ;
-
-	pd = m_SameDataIdx ;
-	pd += m_SameDataIdx_m++ ;
-
-	pd->idx = idx ;
-	pd->nn = nn ;
-
-	if ( m_SameDataIdx_m>=m_SameDataIdx_n )
-		set_SameDataIdx_Len( m_SameDataIdx_n+100 ) ;
-
-	return ( m_SameDataIdx_m-1 ) ;
-
-}
-//////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////
-void TFreqByPcm::set_SameData_Len( long nn )
-{
-	SameData_Type	*pd ;
-	pd = (SameData_Type*)GlobalAlloc( GPTR, (nn)*sizeof(SameData_Type) ) ;
-	if ( m_SameData_n>0 && m_SameData != NULL ) 
+	__finally
 	{
-		CopyMemory( pd, m_SameData, m_SameData_n*sizeof(SameData_Type) ) ;
-		FreeBuf( m_SameData ) ;
+		FreeBuf( m_pcm_data ) ;
 	}
-	m_SameData = pd ;
-	m_SameData_n = nn ;
-}
-//////////////////////////////////////////////////////////////////////
-long TFreqByPcm::push_SameData( long i, long next_i, short y, short next_y )
-{
 
-	SameData_Type	*pd ;
-
-	pd = m_SameData ;
-	pd += m_SameData_m++ ;
-
-	pd->i = i ;
-	pd->next_i = next_i ;
-
-	pd->y = y ;
-	pd->next_y = next_y ;
-
-	if ( m_SameData_m>=m_SameData_n )
-		set_SameData_Len( m_SameData_n+100 ) ;
-
-	return ( m_SameData_m-1 ) ;
+	return ( 0 ) ;
 
 }
-//////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////

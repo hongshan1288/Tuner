@@ -20,28 +20,10 @@ struct	PeakData_Type
 	short	y, f ; // f=-1: ÏÂ½µ£»f=1£ºÉÏÉý
 } ;
 
-struct	PeriodDataIdx_Type
-{
-	long	idx, ff ; 
-	short	avg_yy ;
-} ;
-
 struct	PeriodData_Type
 {
 	long	ix, yy ; 
 } ;
-
-struct	SameData_Type
-{
-	long	i, next_i ;
-	short	y, next_y, dy ; 
-} ;
-
-struct	SameDataIdx_Type
-{
-	long	idx, nn ;
-} ;
-
 
 class TFreqByPcm  
 {
@@ -68,6 +50,7 @@ private:
 	// check too small wav data as a noise data
 	bool check_pcm_data_is_a_noise( short *pcm_data, long pcm_len ) ;
 
+
 	// PcmData
 	short				*m_pcm_data ;
 	long				m_pcm_len ;
@@ -75,23 +58,6 @@ private:
 	// flat data
 	void	make_flat_data( short *pcm_data, long pcm_len ) ;
 	void	show_PcmData( short *pcm_data, long pcm_len, long show_color, long dot_color ) ;
-
-
-	SameDataIdx_Type	*m_SameDataIdx ;
-	long				m_SameDataIdx_m, m_SameDataIdx_n ;
-	void	set_SameDataIdx_Len( long nn ) ;
-	long	push_SameDataIdx( long idx, long nn ) ;
-
-	SameData_Type	*m_SameData ;
-	long			m_SameData_m, m_SameData_n ;
-	void	set_SameData_Len( long nn ) ;
-	long	push_SameData( long i, long next_i, short y, short next_y ) ;
-
-
-	PeriodDataIdx_Type	*m_PeriodDataIdx ;
-	long				m_PeriodDataIdx_m, m_PeriodDataIdx_n ;
-	void	Set_PeriodDataIdx_Len( long nn ) ;
-	long	push_PeriodDataIdx( long idx, long ff, short avg_yy ) ;
 
 	PeriodData_Type	*m_PeriodData ;
 	long			m_PeriodData_m, m_PeriodData_n ;
