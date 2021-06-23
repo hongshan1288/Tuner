@@ -99,3 +99,5 @@ modules/
 *.plg
 
 *.bmp
+
+*.ini
