@@ -11,7 +11,7 @@
 
 struct	PeriodData_Type
 {
-	long	ix ;
+	long	ix, in ;
 	short	ff ; 
 	long	dy_sum ;
 } ;
@@ -48,7 +48,7 @@ private:
 
 	char				*m_dy_data ;
 	void make_dy_data( short *pcm_data, long pcm_len ) ;
-	void make_PeriodData_dySum() ;
+	void show_dy_data( long show_color ) ;
 
 	// flat data
 	void	make_flat_data( short *pcm_data, long pcm_len ) ;
@@ -58,6 +58,7 @@ private:
 	long			m_PeriodData_m, m_PeriodData_n ;
 	void	Set_PeriodData_Len( long nn ) ;
 	long	push_PeriodData( long ix, short ff ) ;
+	void make_PeriodData_dySum() ;
 
 	long			m_Period_is, m_Period_ie, m_Period_dn ;
 	void	get_PeriodData_vars( short *pcm_data, long pcm_len ) ;

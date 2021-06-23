@@ -14,7 +14,7 @@ TFreqByPcm::TFreqByPcm()
 {
 
 	m_MinVV = 1000 ;
-	m_FlatVV = 3200/1 ;
+	m_FlatVV = 3200/4 ;
 
 	m_DC_line_color = RGB( 100, 0, 0 ) ;
 
@@ -263,7 +263,7 @@ void TFreqByPcm::show_PeriodData( long show_color )
 	for ( i=0; i<m_PeriodData_m; i++ )
 	{
 		ix = m_PeriodData[i].ix ;
-		sprintf( ss, "%ld-%ld", i, m_PeriodData[i].dy_sum ) ;
+		sprintf( ss, "%ld-%ld-%ld", i, m_PeriodData[i].in, m_PeriodData[i].dy_sum ) ;
 		if ( ( i % 2 )==0 )
 			draw_VerticalLine( ix, -5, RGB( 50, 50, 10 ), ss ) ;
 		else
@@ -300,10 +300,35 @@ void TFreqByPcm::draw_VerticalLine( long ii, long fx, long show_color, char *sa 
 //////////////////////////////////////////////////////////////////////
 void TFreqByPcm::make_dy_data( short *pcm_data, long pcm_len )
 {
-	long	i ;
+	long	i, dy ;
 	m_dy_data[0] = 0 ;
 	for ( i=1; i<pcm_len; i++ )
-		m_dy_data[i] = (char)(pcm_data[i]-pcm_data[i-1]) ;
+	{
+		dy = (pcm_data[i]-pcm_data[i-1]) ;
+		dy /= m_FlatVV ;
+		m_dy_data[i] = (char)dy ;
+	}
+}
+//////////////////////////////////////////////////////////////////////
+void TFreqByPcm::show_dy_data( long show_color )
+{
+	long	i, x, y, y00 ;
+	double	xx, dx ;
+	char	ss[50] ;
+
+	y00 = g_waveForm_bb / 2 ;
+
+	dx = g_waveForm_aa ;
+	dx /= m_pcm_len ;
+
+	for ( i=m_Period_is; i<m_Period_ie; i++ )
+	{
+		xx = dx*(i-1) ;
+		x = (long)floor(xx) ;
+		y = get_waveForm_y( m_pcm_data[i], y00 ) ;
+		sprintf( ss, "%d", m_dy_data[i] ) ;
+		do_DrawText( ss, x, y, show_color, g_waveForm_backColor, 0, -5 ) ;
+	}
 }
 //////////////////////////////////////////////////////////////////////
 void TFreqByPcm::make_PeriodData_dySum()
@@ -314,8 +339,9 @@ void TFreqByPcm::make_PeriodData_dySum()
 	{
 		dy_sum = 0 ;
 		for ( k=m_PeriodData[i-1].ix; k<m_PeriodData[i].ix; k++ )
-			dy_sum += m_dy_data[k] ;
+			dy_sum += abs(m_dy_data[k]) ;
 		m_PeriodData[i].dy_sum = dy_sum ;
+		m_PeriodData[i].in = m_PeriodData[i].ix-m_PeriodData[i-1].ix ;
 	}
 }
 //////////////////////////////////////////////////////////////////////
@@ -346,6 +372,7 @@ long TFreqByPcm::GetFreqFromPcm( short *pcm_data, long pcm_len, char *from_proc 
 		make_dy_data( m_pcm_data, m_pcm_len ) ;
 		make_PeriodData_dySum() ;
 
+		show_dy_data( RGB(40,40,50) ) ;
 		show_PeriodData( RGB(80,20,20) ) ;
 
 	}
