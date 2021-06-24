@@ -22,7 +22,11 @@ TFreqByPcm::TFreqByPcm()
 
 	m_PeriodData_m = 0 ;
 	m_PeriodData_n = 0 ;
-	Set_PeriodData_Len( 5000 ) ;
+	Set_PeriodData_Len( 1000 ) ;
+
+	m_SameData_m = 0 ;
+	m_SameData_n = 0 ;
+	set_SameData_Len( 500 ) ;
 
 	m_pcm_data = NULL ;
 
@@ -263,7 +267,7 @@ void TFreqByPcm::show_PeriodData( long show_color )
 	for ( i=0; i<m_PeriodData_m; i++ )
 	{
 		ix = m_PeriodData[i].ix ;
-		sprintf( ss, "%ld-%ld-%ld", i, m_PeriodData[i].in, m_PeriodData[i].dy_sum ) ;
+		sprintf( ss, "%ld-%ld-%ld-%ld", i, ix, m_PeriodData[i].in, m_PeriodData[i].dy_sum ) ;
 		if ( ( i % 2 )==0 )
 			draw_VerticalLine( ix, -5, RGB( 50, 50, 10 ), ss ) ;
 		else
@@ -375,6 +379,9 @@ long TFreqByPcm::GetFreqFromPcm( short *pcm_data, long pcm_len, char *from_proc 
 		show_dy_data( RGB(40,40,50) ) ;
 		show_PeriodData( RGB(80,20,20) ) ;
 
+		make_SameData() ;
+		show_SameData( RGB(80,20,120) ) ;
+
 	}
 	__finally
 	{
@@ -384,6 +391,137 @@ long TFreqByPcm::GetFreqFromPcm( short *pcm_data, long pcm_len, char *from_proc 
 	return ( 0 ) ;
 
 }
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+void TFreqByPcm::set_SameData_Len( long nn )
+{
+	SameData_Type	*sd ;
+	sd = (SameData_Type*)GlobalAlloc( GPTR, (nn)*sizeof(SameData_Type) ) ;
+	if ( m_SameData_n>0 && m_SameData != NULL ) 
+	{
+		CopyMemory( sd, m_SameData, m_SameData_n*sizeof(SameData_Type) ) ;
+		FreeBuf( m_SameData ) ;
+	}
+	m_SameData = sd ;
+	m_SameData_n = nn ;
+}
+//////////////////////////////////////////////////////////////////////
+long TFreqByPcm::push_SameData( long cur_ii, long next_ii, long pd_nn, long dy_tot )
+{
+
+	SameData_Type	*sd ;
+
+	sd = m_SameData ;
+	sd += m_SameData_m++ ;
+
+	sd->cur_ii = cur_ii ;
+	sd->next_ii = next_ii ;
+	sd->pd_nn = pd_nn ;
+
+	sd->in_tot = m_PeriodData[cur_ii].in ;
+	sd->dy_sum = m_PeriodData[cur_ii].dy_sum ;
+	sd->dy_tot = dy_tot ;
+
+	if ( m_SameData_m>=m_SameData_n )
+		set_SameData_Len( m_SameData_n+500 ) ;
+
+	return ( m_SameData_m-1 ) ;
+
+}
+//////////////////////////////////////////////////////////////////////
+long TFreqByPcm::get_DyTot( long i1, long i2, long pd_nn )
+{
+	long	i, nn, dy_tot ;
+	long	ii1, ii2 ;
+	dy_tot = 0 ;
+
+	nn = m_PeriodData[i1].ix-m_PeriodData[i1-pd_nn].ix ;
+	ii1 = m_PeriodData[i1-pd_nn].ix ;
+	ii2 = m_PeriodData[i2-pd_nn].ix ;
+	for ( i=0; i<nn; i++ )
+	{
+		dy_tot += abs(m_pcm_data[i+ii1]-m_pcm_data[i+ii2] ) ;
+	}
+	dy_tot /= m_FlatVV ;
+	dy_tot /= nn ;
+	return ( dy_tot ) ;
+}
+//////////////////////////////////////////////////////////////////////
+bool TFreqByPcm::like_SameData( long i1, long i2, long pd_nn )
+{
+	long	i ;
+	long	in1, in2, dy_sum1, dy_sum2 ;
+	long	in_tot, dy_sum_tot ;
+
+	in1 = in2 = 0 ;
+	dy_sum1 = dy_sum2 = 0 ;
+	for ( i=0; i<pd_nn; i++ )
+	{
+		in1 += m_PeriodData[i+i1].in ;
+		in2 += m_PeriodData[i+i2].in ;
+		dy_sum1 += m_PeriodData[i+i1].dy_sum ;
+		dy_sum2 += m_PeriodData[i+i2].dy_sum ;
+	}
+	in_tot = abs(in1-in2) ;
+	dy_sum_tot = abs(dy_sum1-dy_sum2) ;
+	if ( in_tot<=m_Max_In*pd_nn && dy_sum_tot<=m_Max_DySum*pd_nn )
+		return ( true ) ;
+	else
+		return ( false ) ;
+}
+//////////////////////////////////////////////////////////////////////
+long TFreqByPcm::get_SameData( long i, long pd_nn )
+{
+	long	ii, dy_tot ;
+	for ( ii=i+pd_nn; ii<m_PeriodData_m; ii++ )
+	{
+		if ( like_SameData( i, ii, pd_nn ) )
+		{
+			dy_tot = get_DyTot( i, ii, pd_nn ) ;
+			if ( dy_tot<=m_Max_DyTot )
+			{
+				push_SameData( i, ii, pd_nn, dy_tot ) ;
+				return (ii) ;
+			}
+		}
+	}
+	return ( -1 ) ;
+}
+//////////////////////////////////////////////////////////////////////
+void TFreqByPcm::make_SameData()
+{
+	long	i, n ;
+
+	m_Max_In = 3 ;
+	m_Max_DySum = 5 ;
+	m_Max_DyTot = 1 ;
+
+	m_SameData_m = 0 ;
+	n = 1 ;
+	for ( i=1; i<m_PeriodData_m; i+=n )
+	{
+		get_SameData( i, n ) ;
+	}
+}
+//////////////////////////////////////////////////////////////////////
+void TFreqByPcm::show_SameData( long show_color )
+{
+	long	i, ii, ix, tot ;
+	char	ss[50] ;
+	for ( i=0; i<m_SameData_m; i++ )
+	{
+		ii = m_SameData[i].cur_ii ;
+		ix = m_PeriodData[ii].ix ;
+		tot = m_PeriodData[m_SameData[i].next_ii].ix-ix ;
+		sprintf( ss, "%ld-%ld-%ld-%ld", m_SameData[i].cur_ii, m_SameData[i].next_ii, m_SameData[i].dy_tot, tot ) ;
+		if ( ( ii % 2 )==0 )
+			draw_VerticalLine( ix, -25, show_color, ss ) ;
+		else
+			draw_VerticalLine( ix, -40, show_color, ss ) ;
+	}
+}
+//////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////

@@ -16,6 +16,12 @@ struct	PeriodData_Type
 	long	dy_sum ;
 } ;
 
+struct	SameData_Type
+{
+	long	cur_ii, next_ii, pd_nn ;
+	long	in_tot, dy_sum, dy_tot ;
+} ;
+
 class TFreqByPcm  
 {
 private:
@@ -58,7 +64,7 @@ private:
 	long			m_PeriodData_m, m_PeriodData_n ;
 	void	Set_PeriodData_Len( long nn ) ;
 	long	push_PeriodData( long ix, short ff ) ;
-	void make_PeriodData_dySum() ;
+	void	make_PeriodData_dySum() ;
 
 	long			m_Period_is, m_Period_ie, m_Period_dn ;
 	void	get_PeriodData_vars( short *pcm_data, long pcm_len ) ;
@@ -67,6 +73,19 @@ private:
 
 	void show_PeriodData( long show_color ) ;
 	void draw_VerticalLine( long ii, long fx, long show_color, char *sa ) ;
+
+	SameData_Type	*m_SameData ;
+	long			m_SameData_m, m_SameData_n ;
+	void	set_SameData_Len( long nn ) ;
+	long	push_SameData( long cur_ii, long next_ii, long pd_nn, long dy_tot ) ;
+
+	long		m_Max_In, m_Max_DySum, m_Max_DyTot ;
+	long	get_DyTot( long i1, long i2, long pd_nn ) ;
+	bool	like_SameData( long i, long ii, long pd_nn ) ;
+	long	get_SameData( long cur_ii, long pd_nn ) ;
+	void	make_SameData() ;
+
+	void show_SameData( long show_color ) ;
 
 public:
 
