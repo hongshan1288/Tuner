@@ -35,6 +35,7 @@ type
     Image_WaveForm: TImage;
     Panel_WaveForm: TMyPanel0;
     EditZoomValue: TEdit;
+    Edit2: TEdit;
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure FormResize(Sender: TObject);
@@ -572,7 +573,9 @@ begin
     CenterControl_XY( TWinControl(Panel_Info), 0, 6) ;
 
     EditZoomValue.Left := EditZoomValue.parent.width-EditZoomValue.width-100 ;
-    Edit1.Width := EditZoomValue.Left-Edit1.Left-5 ;
+    Edit1.Width := (EditZoomValue.Left-Edit1.Left) div 2 - 5 ;
+    Edit2.Width := Edit1.Width ;
+    Edit2.Left := Edit1.Left + Edit1.Width ;
     ResizeIamge_Proc ;
   end ;
 end ;

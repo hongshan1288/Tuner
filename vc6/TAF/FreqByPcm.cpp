@@ -16,6 +16,8 @@ TFreqByPcm::TFreqByPcm()
 	m_MinVV = 1000 ;
 	m_FlatVV = 3200/4 ;
 
+	m_LineMode = PS_SOLID ;
+
 	m_DC_line_color = RGB( 100, 0, 0 ) ;
 
 	m_Period_dn = 1 ;
@@ -246,12 +248,18 @@ void TFreqByPcm::make_PeriodData( short *pcm_data, long pcm_len )
 			}
 			else if ( y0<0 && yy>0 )
 			{
-				push_PeriodData( i, -1 ) ;
+				if ( abs(y0)<abs(yy) )
+					push_PeriodData( i-1, -1 ) ;
+				else
+					push_PeriodData( i, -1 ) ;
 				ff = 1 ;
 			}
 			else if ( y0>0 && yy<0 )
 			{
-				push_PeriodData( i, 1 ) ;
+				if ( abs(y0)<abs(yy) )
+					push_PeriodData( i-1, 1 ) ;
+				else
+					push_PeriodData( i, 1 ) ;
 				ff = -1 ;
 			}
 		}
@@ -264,18 +272,19 @@ void TFreqByPcm::show_PeriodData( long show_color )
 {
 	long	i, ix ;
 	char	ss[50] ;
+	m_LineMode = PS_SOLID ;
 	for ( i=0; i<m_PeriodData_m; i++ )
 	{
 		ix = m_PeriodData[i].ix ;
 		sprintf( ss, "%ld-%ld-%ld-%ld", i, ix, m_PeriodData[i].in, m_PeriodData[i].dy_sum ) ;
 		if ( ( i % 2 )==0 )
-			draw_VerticalLine( ix, -5, RGB( 50, 50, 10 ), ss ) ;
+			draw_VerticalLine( ix, 0, -5, RGB( 50, 50, 10 ), ss ) ;
 		else
-			draw_VerticalLine( ix, -20, RGB( 50, 50, 10 ), ss ) ;
+			draw_VerticalLine( ix, 0, -20, RGB( 50, 50, 10 ), ss ) ;
 	}
 }
 //////////////////////////////////////////////////////////////////////
-void TFreqByPcm::draw_VerticalLine( long ii, long fx, long show_color, char *sa )
+void TFreqByPcm::draw_VerticalLine( long ii, long xoff, long fx, long show_color, char *sa )
 {
 	long	x, y, y00 ;
 	double	xx, dx ;
@@ -287,8 +296,9 @@ void TFreqByPcm::draw_VerticalLine( long ii, long fx, long show_color, char *sa 
 
 	xx = dx*(ii-1) ;
 	x = (long)floor(xx) ;
+	x += xoff ;
 	y = get_waveForm_y( m_pcm_data[ii], y00 ) ;
-	do_DrawLine( x, y, x, g_waveForm_bb, 1, show_color, PS_SOLID, R2_COPYPEN ) ;
+	do_DrawLine( x, y, x, g_waveForm_bb, 1, show_color, m_LineMode, R2_COPYPEN ) ;
 
 	if ( sa[0] != '\0' )
 		do_DrawText( sa, x, g_waveForm_bb, show_color, g_waveForm_backColor, 10, fx ) ;
@@ -380,7 +390,10 @@ long TFreqByPcm::GetFreqFromPcm( short *pcm_data, long pcm_len, char *from_proc 
 		show_PeriodData( RGB(80,20,20) ) ;
 
 		make_SameData() ;
-		show_SameData( RGB(80,20,120) ) ;
+		make_SameData2() ;
+
+		show_NextData( 0, 20, RGB(80,20,120), PS_SOLID ) ;
+		show_NextData( 1, 40, RGB(20,80,80), PS_DASH ) ;
 
 	}
 	__finally
@@ -471,6 +484,13 @@ bool TFreqByPcm::like_SameData( long i1, long i2, long pd_nn )
 		return ( false ) ;
 }
 //////////////////////////////////////////////////////////////////////
+void TFreqByPcm::push_NextData( long i, long next_ii, long idx )
+{
+	PeriodData_Type	*pd ;
+	pd = &m_PeriodData[i] ;
+	pd->next_ii[idx] = next_ii ;
+}
+//////////////////////////////////////////////////////////////////////
 long TFreqByPcm::get_SameData( long i, long pd_nn )
 {
 	long	ii, dy_tot ;
@@ -481,7 +501,8 @@ long TFreqByPcm::get_SameData( long i, long pd_nn )
 			dy_tot = get_DyTot( i, ii, pd_nn ) ;
 			if ( dy_tot<=m_Max_DyTot )
 			{
-				push_SameData( i, ii, pd_nn, dy_tot ) ;
+//				push_SameData( i, ii, pd_nn, dy_tot ) ;
+				push_NextData( i, ii, 0 ) ;
 				return (ii) ;
 			}
 		}
@@ -491,38 +512,136 @@ long TFreqByPcm::get_SameData( long i, long pd_nn )
 //////////////////////////////////////////////////////////////////////
 void TFreqByPcm::make_SameData()
 {
-	long	i, n ;
+	long	i, n, f, m ;
 
 	m_Max_In = 3 ;
 	m_Max_DySum = 5 ;
 	m_Max_DyTot = 1 ;
 
 	m_SameData_m = 0 ;
-	n = 1 ;
-	for ( i=1; i<m_PeriodData_m; i+=n )
+	n = 3 ;
+	m = 0 ;
+	for ( i=n; i<m_PeriodData_m; i+=n )
 	{
-		get_SameData( i, n ) ;
-	}
-}
-//////////////////////////////////////////////////////////////////////
-void TFreqByPcm::show_SameData( long show_color )
-{
-	long	i, ii, ix, tot ;
-	char	ss[50] ;
-	for ( i=0; i<m_SameData_m; i++ )
-	{
-		ii = m_SameData[i].cur_ii ;
-		ix = m_PeriodData[ii].ix ;
-		tot = m_PeriodData[m_SameData[i].next_ii].ix-ix ;
-		sprintf( ss, "%ld-%ld-%ld-%ld", m_SameData[i].cur_ii, m_SameData[i].next_ii, m_SameData[i].dy_tot, tot ) ;
-		if ( ( ii % 2 )==0 )
-			draw_VerticalLine( ix, -25, show_color, ss ) ;
+		f = get_SameData( i, n ) ;
+		if ( f<0 )
+		{
+			m ++ ;
+			if ( m>3 )
+				break ;
+		}
 		else
-			draw_VerticalLine( ix, -40, show_color, ss ) ;
+			m = 0 ;
 	}
 }
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
+double TFreqByPcm::get_DyTot22( long i1, long i2, long pd_nn )
+{
+	long	i, nn ;
+	double	dy_tot ;
+	long	ii1, ii2 ;
+
+	nn = m_PeriodData[i1].ix-m_PeriodData[i1-pd_nn].ix ;
+	ii1 = m_PeriodData[i1-pd_nn].ix ;
+	ii2 = m_PeriodData[i2-pd_nn].ix ;
+	dy_tot = 0 ;
+	for ( i=0; i<nn; i++ )
+	{
+		if ( abs(m_pcm_data[i+ii1]-m_pcm_data[i+ii2] )<=m_FlatVV*2 )
+			dy_tot += 1 ;
+	}
+	dy_tot /= nn ;
+	return ( dy_tot ) ;
+}
+//////////////////////////////////////////////////////////////////////
+long TFreqByPcm::get_DyTot2( long i1, long i2, long pd_nn )
+{
+	long	i, nn, dy_tot ;
+	long	ii1, ii2 ;
+
+	nn = m_PeriodData[i1].ix-m_PeriodData[i1-pd_nn].ix ;
+	ii1 = m_PeriodData[i1-pd_nn].ix ;
+	ii2 = m_PeriodData[i2-pd_nn].ix ;
+	dy_tot = 0 ;
+	for ( i=0; i<nn; i++ )
+	{
+		if ( abs(m_pcm_data[i+ii1]-m_pcm_data[i+ii2] )<=m_FlatVV*2 )
+			dy_tot += 1 ;
+	}
+	if ( dy_tot>0 )
+		return ( nn-dy_tot ) ;
+	else
+		return ( 10000 ) ;
+}
+//////////////////////////////////////////////////////////////////////
+long TFreqByPcm::get_SameData2( long i, long pd_nn )
+{
+	long	ii ;
+	double	dy_tot ;
+	for ( ii=i+pd_nn; ii<m_PeriodData_m; ii++ )
+	{
+		if ( like_SameData( i, ii, pd_nn ) )
+		{
+			dy_tot = get_DyTot22( i, ii, pd_nn ) ;
+			if ( dy_tot>=m_Max_DyTot2 )
+			{
+				push_NextData( i, ii, 1 ) ;
+				return (ii) ;
+			}
+		}
+	}
+	return ( -1 ) ;
+}
+//////////////////////////////////////////////////////////////////////
+void TFreqByPcm::make_SameData2()
+{
+	long	i, n, m, f ;
+
+	m_Max_In = 3 ;
+	m_Max_DySum = 5 ;
+	m_Max_DyTot = 3 ;
+	m_Max_DyTot2 = 0.818 ;
+
+	m_SameData_m = 0 ;
+	n = 2 ;
+	m = 0 ;
+	for ( i=n; i<m_PeriodData_m; i+=n )
+	{
+		f = get_SameData2( i, n ) ;
+		if ( f<0 )
+		{
+			m ++ ;
+			if ( m>3 )
+				break ;
+		}
+		else
+			m = 0 ;
+	}
+}
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+void TFreqByPcm::show_NextData( long idx, long y_off, long show_color, long line_mode )
+{
+	long	i, next_ii, ix, tot ;
+	char	ss[50] ;
+
+	m_LineMode = line_mode ;
+	for ( i=0; i<m_PeriodData_m; i++ )
+	{
+		next_ii = m_PeriodData[i].next_ii[idx] ;
+		if ( next_ii>0 )
+		{
+			ix = m_PeriodData[i].ix ;
+			tot = m_PeriodData[next_ii].ix-ix ;
+			sprintf( ss, "%ld-%ld-%ld", i, next_ii, tot ) ;
+			if ( ( i % 2 )==0 )
+				draw_VerticalLine( ix, 1+idx, -y_off, show_color, ss ) ;
+			else
+				draw_VerticalLine( ix, 1+idx, -(y_off+20), show_color, ss ) ;
+		}
+	}
+}
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 

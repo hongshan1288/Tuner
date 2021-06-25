@@ -9,17 +9,23 @@
 #pragma once
 #endif // _MSC_VER > 1000
 
+struct	SameData_Type
+{
+	long	cur_ii, next_ii, pd_nn ;
+	long	in_tot, dy_sum, dy_tot ;
+} ;
+
+struct	NextData_Type
+{
+	long	next_ii ;
+} ;
+
 struct	PeriodData_Type
 {
 	long	ix, in ;
 	short	ff ; 
 	long	dy_sum ;
-} ;
-
-struct	SameData_Type
-{
-	long	cur_ii, next_ii, pd_nn ;
-	long	in_tot, dy_sum, dy_tot ;
+	long	next_ii[10] ;
 } ;
 
 class TFreqByPcm  
@@ -28,6 +34,7 @@ private:
 
 	double				m_dx ;
 
+	long	m_LineMode ;
 	long	m_FlatVV ;
 	double	m_MinVV ;
 
@@ -72,7 +79,7 @@ private:
 	long	get_PeriodData_yy( short *pcm_data, long ix, long n ) ;
 
 	void show_PeriodData( long show_color ) ;
-	void draw_VerticalLine( long ii, long fx, long show_color, char *sa ) ;
+	void draw_VerticalLine( long ii, long xoff, long fx, long show_color, char *sa ) ;
 
 	SameData_Type	*m_SameData ;
 	long			m_SameData_m, m_SameData_n ;
@@ -80,12 +87,25 @@ private:
 	long	push_SameData( long cur_ii, long next_ii, long pd_nn, long dy_tot ) ;
 
 	long		m_Max_In, m_Max_DySum, m_Max_DyTot ;
+
+	void show_NextData( long idx, long y_off, long show_color, long line_mode ) ;
+	void push_NextData( long i, long next_ii, long idx ) ;
+
 	long	get_DyTot( long i1, long i2, long pd_nn ) ;
 	bool	like_SameData( long i, long ii, long pd_nn ) ;
 	long	get_SameData( long cur_ii, long pd_nn ) ;
 	void	make_SameData() ;
-
 	void show_SameData( long show_color ) ;
+
+	double	m_Max_DyTot2 ;
+
+	long	push_SameData2( long cur_ii, long next_ii, long pd_nn, long dy_tot ) ;
+
+	long	get_DyTot2( long i1, long i2, long pd_nn ) ;
+	double	get_DyTot22( long i1, long i2, long pd_nn ) ;
+	long	get_SameData2( long cur_ii, long pd_nn ) ;
+	void	make_SameData2() ;
+	void show_SameData2( long show_color ) ;
 
 public:
 
