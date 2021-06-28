@@ -25,7 +25,16 @@ struct	PeriodData_Type
 	long	ix, in ;
 	short	ff ; 
 	long	dy_sum ;
-	long	next_ii[10] ;
+	long	next_ii[2] ;
+} ;
+
+struct	SegData_Type
+{
+	double	xx ;
+	short	ff ;
+	long	ix ;
+	double	yy[20] ; // 可以改成10试试
+	long	next_ii[2] ;
 } ;
 
 class TFreqByPcm  
@@ -51,7 +60,7 @@ private:
 	POINT	*m_waveForm_xy ;
 	long	m_waveForm_xy_nn, m_waveForm_xy_size ;
 
-	long make_WaveForm_Data( short *pcm_data, long pcm_len, long xxx, long aaa, POINT *xy_data ) ;
+	long make_WaveFormData( short *pcm_data, long pcm_len, long xxx, long aaa, POINT *xy_data ) ;
 	void draw_WaveForm_data( long dot_show_flag, POINT *xy_data, long xy_nn, long line_width, long waveForm_color, long dot_color ) ;
 	
 
@@ -83,6 +92,7 @@ private:
 	long	get_PeriodData_yy( short *pcm_data, long ix, long n ) ;
 
 	void show_PeriodData( long show_color ) ;
+	void draw_VLine( double xx, long yy, long xoff, long fx, long show_color, char *sa ) ;
 	void draw_VerticalLine( long ii, long xoff, long fx, long show_color, char *sa ) ;
 
 	SameData_Type	*m_SameData ;
@@ -110,6 +120,24 @@ private:
 	long	get_SameData2( long cur_ii, long pd_nn ) ;
 	void	make_SameData2(long n) ;
 	void show_SameData2( long show_color ) ;
+
+
+
+
+	// seg data
+
+	SegData_Type	*m_SegData ;
+	long		m_SegData_m, m_SegData_n ;
+
+	void	set_SegData_Len( long nn ) ;
+	long	push_SegData( short ff, long ix, double xx ) ;
+
+	long get_sign( long yy ) ;
+	double get_xx( long i, long y0, long yy ) ;
+	void make_seg_data( short *pcm_data, long pcm_len ) ;
+	void show_SegData( long show_color ) ;
+
+
 
 
 public:
