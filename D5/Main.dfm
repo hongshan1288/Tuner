@@ -160,7 +160,7 @@ object frmMain: TfrmMain
       end
     end
     object EditZoomValue: TEdit
-      Left = 561
+      Left = 558
       Top = 3
       Width = 48
       Height = 20
@@ -170,8 +170,8 @@ object frmMain: TfrmMain
       OnExit = EditZoomValueExit
     end
     object Edit2: TEdit
-      Left = 413
-      Top = 3
+      Left = 411
+      Top = 4
       Width = 146
       Height = 20
       TabOrder = 10
