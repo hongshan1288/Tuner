@@ -14,7 +14,7 @@ TFreqByPcm::TFreqByPcm()
 {
 
 	m_MinVV = 1000 ;
-	m_FlatVV = 3200/4 ;
+	m_FlatVV = 3200/8 ;
 
 	m_LineMode = PS_SOLID ;
 
@@ -119,6 +119,8 @@ void TFreqByPcm::draw_WaveForm_data( long dot_show_flag, POINT *xy_data, long xy
 	long	y0 = g_waveForm_bb / 2 ;
 
 	do_Polyline( xy_data, xy_nn, line_width, waveForm_color, PS_SOLID, R2_COPYPEN ) ;
+	do_DrawLine( 0, g_waveForm_bb / 2, g_waveForm_aa-1, g_waveForm_bb / 2, 1, m_DC_line_color, PS_SOLID, R2_COPYPEN ) ;
+
 	if ( dot_show_flag>0 )
 	{
 		long	i, x, y ;
@@ -133,14 +135,114 @@ void TFreqByPcm::draw_WaveForm_data( long dot_show_flag, POINT *xy_data, long xy
 	DoEventProc() ;
 }
 //////////////////////////////////////////////////////////////////////
-void TFreqByPcm::show_PcmData( short *pcm_data, long pcm_len, long show_color, long dot_color )
+long TFreqByPcm::make_WaveForm_Data( short *pcm_data, long pcm_len, long xxx, long aaa, POINT *xy_data )
 {
-	do_DrawLine( 0, g_waveForm_bb / 2, g_waveForm_aa-1, g_waveForm_bb / 2, 1, m_DC_line_color, PS_SOLID, R2_COPYPEN ) ;
+	long	i, ii, x, y, x0, y0, min_y, max_y, a_max ;
+	double	xx, dx ;
 
-	g_waveForm_xy_nn = make_WaveForm_Data( pcm_data, pcm_len, 0, g_waveForm_aa, g_waveForm_xy ) ;
-	draw_WaveForm_data( 1, g_waveForm_xy, g_waveForm_xy_nn, 1, show_color, dot_color ) ; 
+	y0 = g_waveForm_bb / 2 ;
+
+	dx = aaa ;
+	dx /= pcm_len ;
+
+	a_max = 100000000 ;
+
+	if ( dx<1 )
+	{
+		min_y = a_max ;
+		max_y = -a_max ;
+	}
+
+	x0 = 0 ;
+	xx = 0 ;
+	x = 0 ;
+	ii = 0 ;
+
+	xy_data[ii].x = 0 ;
+
+	for ( i=0; i<pcm_len; i++ )
+	{
+		y = pcm_data[i] ;
+
+		if ( dx<1 )
+		{
+			if ( min_y>y )
+				min_y = y ;
+			if ( max_y<y )
+				max_y = y ;
+
+			xx = i*dx ;
+			x = (long)floor(xx) ;
+
+			if ( x>x0 )
+			{
+				if ( min_y>0 && max_y>0 )
+				{
+					xy_data[ii].x = x0 + xxx ;
+					xy_data[ii].y = get_waveForm_y( max_y, y0 ) ;
+					ii++ ;
+				}
+				else if ( min_y<0 && max_y<0 )
+				{
+					xy_data[ii].x = x0 + xxx ;
+					xy_data[ii].y = get_waveForm_y( min_y, y0 ) ;
+					ii++ ;
+				}
+				else
+				{
+					xy_data[ii].x = x0 + xxx ;
+					xy_data[ii].y = get_waveForm_y( min_y, y0 ) ;
+					ii++ ;
+
+					xy_data[ii].x = x0 + xxx ;
+					xy_data[ii].y = get_waveForm_y( max_y, y0 ) ;
+					ii++ ;
+				}
+				min_y = a_max ;
+				max_y = -a_max ;
+				x0 = x ;
+			}
+		}
+		else
+		{
+			xy_data[ii].x = x0 + xxx ;
+			xy_data[ii].y = get_waveForm_y( y, y0 ) ;
+			ii ++ ;
+			xx =i*dx ;
+			x0 = (long)floor(xx) ;
+		}
+	}
+	if ( dx<1 )
+	{
+		if ( min_y != a_max && max_y != -a_max )
+		{
+			xy_data[ii].x = x0 + xxx ;
+			xy_data[ii].y = get_waveForm_y( min_y, y0 ) ;
+			ii++ ;
+			xy_data[ii].x = x0 + xxx ;
+			xy_data[ii].y = get_waveForm_y( max_y, y0 ) ;
+			ii++ ;
+		}
+	}
+	xy_data[ii].x = x0 + xxx ;
+	xy_data[ii].y = get_waveForm_y( 0, y0 ) ; ;
+	ii++ ;
+
+	return ( ii ) ;
+
 }
 //////////////////////////////////////////////////////////////////////
+void TFreqByPcm::make_xy_buf( long aa )
+{
+	m_waveForm_xy_size = aa*2+100 ;
+	m_waveForm_xy = (POINT*)GlobalAlloc( GPTR, m_waveForm_xy_size*sizeof(POINT) ) ;
+}
+//////////////////////////////////////////////////////////////////////
+void TFreqByPcm::show_PcmData( short *pcm_data, long pcm_len, long show_color, long dot_color )
+{
+	long xy_nn = make_WaveForm_Data( pcm_data, pcm_len, 0, g_waveForm_aa, m_waveForm_xy ) ;
+	draw_WaveForm_data( 1, m_waveForm_xy, xy_nn, 1, show_color, dot_color ) ; 
+}
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
@@ -276,7 +378,7 @@ void TFreqByPcm::show_PeriodData( long show_color )
 	for ( i=0; i<m_PeriodData_m; i++ )
 	{
 		ix = m_PeriodData[i].ix ;
-		sprintf( ss, "%ld-%ld-%ld-%ld", i, ix, m_PeriodData[i].in, m_PeriodData[i].dy_sum ) ;
+		sprintf( ss, "%ld-%ld", i, ix ) ;
 		if ( ( i % 2 )==0 )
 			draw_VerticalLine( ix, 0, -5, RGB( 50, 50, 10 ), ss ) ;
 		else
@@ -379,19 +481,19 @@ long TFreqByPcm::GetFreqFromPcm( short *pcm_data, long pcm_len, char *from_proc 
 		show_PcmData( m_pcm_data, m_pcm_len, RGB(0,20,0), RGB(0,50,0) ) ;
 
 		make_flat_data( m_pcm_data, m_pcm_len ) ;
-		show_PcmData( m_pcm_data, m_pcm_len, RGB(50,50,50), RGB(100,100,100) ) ;
 
 		make_PeriodData( m_pcm_data, m_pcm_len ) ;
 
 		make_dy_data( m_pcm_data, m_pcm_len ) ;
 		make_PeriodData_dySum() ;
 
-		show_dy_data( RGB(40,40,50) ) ;
+//		show_dy_data( RGB(40,40,50) ) ;
+
+		make_SameData(3) ;
+		make_SameData2(3) ;
+
+		show_PcmData( m_pcm_data, m_pcm_len, RGB(50,50,50), RGB(100,100,100) ) ;
 		show_PeriodData( RGB(80,20,20) ) ;
-
-		make_SameData() ;
-		make_SameData2() ;
-
 		show_NextData( 0, 20, RGB(80,20,120), PS_SOLID ) ;
 		show_NextData( 1, 40, RGB(20,80,80), PS_DASH ) ;
 
@@ -418,29 +520,6 @@ void TFreqByPcm::set_SameData_Len( long nn )
 	}
 	m_SameData = sd ;
 	m_SameData_n = nn ;
-}
-//////////////////////////////////////////////////////////////////////
-long TFreqByPcm::push_SameData( long cur_ii, long next_ii, long pd_nn, long dy_tot )
-{
-
-	SameData_Type	*sd ;
-
-	sd = m_SameData ;
-	sd += m_SameData_m++ ;
-
-	sd->cur_ii = cur_ii ;
-	sd->next_ii = next_ii ;
-	sd->pd_nn = pd_nn ;
-
-	sd->in_tot = m_PeriodData[cur_ii].in ;
-	sd->dy_sum = m_PeriodData[cur_ii].dy_sum ;
-	sd->dy_tot = dy_tot ;
-
-	if ( m_SameData_m>=m_SameData_n )
-		set_SameData_Len( m_SameData_n+500 ) ;
-
-	return ( m_SameData_m-1 ) ;
-
 }
 //////////////////////////////////////////////////////////////////////
 long TFreqByPcm::get_DyTot( long i1, long i2, long pd_nn )
@@ -478,7 +557,8 @@ bool TFreqByPcm::like_SameData( long i1, long i2, long pd_nn )
 	}
 	in_tot = abs(in1-in2) ;
 	dy_sum_tot = abs(dy_sum1-dy_sum2) ;
-	if ( in_tot<=m_Max_In*pd_nn && dy_sum_tot<=m_Max_DySum*pd_nn )
+//	if ( in_tot<=m_Max_In*pd_nn && dy_sum_tot<=m_Max_DySum*pd_nn )
+	if ( in_tot<=m_Max_In && dy_sum_tot<=m_Max_DySum*pd_nn )
 		return ( true ) ;
 	else
 		return ( false ) ;
@@ -501,7 +581,6 @@ long TFreqByPcm::get_SameData( long i, long pd_nn )
 			dy_tot = get_DyTot( i, ii, pd_nn ) ;
 			if ( dy_tot<=m_Max_DyTot )
 			{
-//				push_SameData( i, ii, pd_nn, dy_tot ) ;
 				push_NextData( i, ii, 0 ) ;
 				return (ii) ;
 			}
@@ -510,18 +589,17 @@ long TFreqByPcm::get_SameData( long i, long pd_nn )
 	return ( -1 ) ;
 }
 //////////////////////////////////////////////////////////////////////
-void TFreqByPcm::make_SameData()
+void TFreqByPcm::make_SameData( long n )
 {
-	long	i, n, f, m ;
+	long	i, f, m ;
 
 	m_Max_In = 3 ;
 	m_Max_DySum = 5 ;
-	m_Max_DyTot = 1 ;
+	m_Max_DyTot = 2 ;
 
 	m_SameData_m = 0 ;
-	n = 3 ;
 	m = 0 ;
-	for ( i=n; i<m_PeriodData_m; i+=n )
+	for ( i=n; i<m_PeriodData_m; i++ )
 	{
 		f = get_SameData( i, n ) ;
 		if ( f<0 )
@@ -594,26 +672,28 @@ long TFreqByPcm::get_SameData2( long i, long pd_nn )
 	return ( -1 ) ;
 }
 //////////////////////////////////////////////////////////////////////
-void TFreqByPcm::make_SameData2()
+void TFreqByPcm::make_SameData2(long n)
 {
-	long	i, n, m, f ;
+	long	i, m, f ;
 
 	m_Max_In = 3 ;
 	m_Max_DySum = 5 ;
 	m_Max_DyTot = 3 ;
-	m_Max_DyTot2 = 0.818 ;
+	m_Max_DyTot2 = 0.618 ;
 
 	m_SameData_m = 0 ;
-	n = 2 ;
 	m = 0 ;
-	for ( i=n; i<m_PeriodData_m; i+=n )
+	for ( i=n; i<m_PeriodData_m; i++ )
 	{
 		f = get_SameData2( i, n ) ;
 		if ( f<0 )
 		{
 			m ++ ;
 			if ( m>3 )
-				break ;
+			{
+				if ( m_SameData_m>3 )
+					break ;
+			}
 		}
 		else
 			m = 0 ;

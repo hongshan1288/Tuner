@@ -48,6 +48,10 @@ private:
 	void do_Polyline( POINT *xy, long xy_nn, long line_width, long line_color, long line_style, long line_mode  ) ;
 	void do_DrawBar( long x1, long y1, long x2, long y2, long bar_color, long bar_style, long bar_mode ) ;
 
+	POINT	*m_waveForm_xy ;
+	long	m_waveForm_xy_nn, m_waveForm_xy_size ;
+
+	long make_WaveForm_Data( short *pcm_data, long pcm_len, long xxx, long aaa, POINT *xy_data ) ;
 	void draw_WaveForm_data( long dot_show_flag, POINT *xy_data, long xy_nn, long line_width, long waveForm_color, long dot_color ) ;
 	
 
@@ -94,7 +98,7 @@ private:
 	long	get_DyTot( long i1, long i2, long pd_nn ) ;
 	bool	like_SameData( long i, long ii, long pd_nn ) ;
 	long	get_SameData( long cur_ii, long pd_nn ) ;
-	void	make_SameData() ;
+	void	make_SameData(long n) ;
 	void show_SameData( long show_color ) ;
 
 	double	m_Max_DyTot2 ;
@@ -104,8 +108,9 @@ private:
 	long	get_DyTot2( long i1, long i2, long pd_nn ) ;
 	double	get_DyTot22( long i1, long i2, long pd_nn ) ;
 	long	get_SameData2( long cur_ii, long pd_nn ) ;
-	void	make_SameData2() ;
+	void	make_SameData2(long n) ;
 	void show_SameData2( long show_color ) ;
+
 
 public:
 
@@ -114,6 +119,7 @@ public:
 	TFreqByPcm();
 	virtual ~TFreqByPcm();
 
+	void	make_xy_buf( long aa ) ;
 	long GetFreqFromPcm( short *pcm_data, long pcm_len, char *from_proc ) ;
 
 };

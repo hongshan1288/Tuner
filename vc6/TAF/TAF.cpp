@@ -669,7 +669,6 @@ long	audio_open_proc( char *DataValue )
 {
 	long	samples, bits, channels, bufs, buf_size, data_tot, freq_tot, max_sec ;
 
-//	sscanf( DataValue, "%ld %ld %ld %ld %ld %ld %ld", &samples, &bits, &channels, &bufs, &buf_size, &data_tot, &freq_tot ) ;
 	sscanf( DataValue, "%ld %ld %ld %ld %ld %ld %ld", &samples, &bits, &channels, &bufs, &data_tot, &freq_tot, &max_sec ) ;
 
 	buf_size = (bits/8)*samples / MAX_PCM_DIV ;
@@ -684,6 +683,7 @@ long	audio_open_proc( char *DataValue )
 
 		g_Samples = samples ;
 
+/**
 		g_wave_data_buf = (short*)GlobalAlloc( GPTR, g_wave_data_size ) ;
 		g_wave_show_buf = (short*)GlobalAlloc( GPTR, g_wave_data_size ) ;
 
@@ -691,8 +691,6 @@ long	audio_open_proc( char *DataValue )
 		g_waveForm_xy = (POINT*)GlobalAlloc( GPTR, g_waveForm_xy_len*sizeof(POINT) ) ;
 
 		g_waveForm_pcm = (short*)GlobalAlloc( GPTR, g_wave_data_size ) ;
-		
-
 
 		// open all bufs here
 		g_pcm_data_max = data_tot ;
@@ -727,8 +725,8 @@ long	audio_open_proc( char *DataValue )
 		// 打开所有的采样数据的结构
 
 		open_all_pcm_data( max_sec, buf_size ) ;
-
-
+**/
+		init_fbp() ;
 		g_Audio.Audio_Start() ;
 
 		return ( 1 ) ;
@@ -6438,23 +6436,24 @@ void init_fbp()
 long do_test_wave_proc( char *wav_file )
 {
 	long	nSize, nOff, ff ;
-
-	if ( do_task( 201, "" )>0 )
-	{
-		sscanf( g_waveForm_rect_vars, "%lu %lu", &g_waveForm_aa, &g_waveForm_bb ) ;
-		strcpy( g_waveForm_rect_vars, "" ) ;
-	}
+	short	*pcm_data ;
 
 	nOff = 44 ;
 	nSize = Get_FileSize( wav_file ) ;
 
+
 	nSize -= nOff ;
-	ReadBufFromFile( wav_file, g_pcm_data, nOff, nSize ) ;
-
-	ff = g_fbp->GetFreqFromPcm( (short*)g_pcm_data, nSize/2, "do_test_wave_proc" ) ;
-
-	if ( ff<0 ) 
+	pcm_data = (short*)GlobalAlloc( GPTR, nSize ) ;
+	__try
 	{
+		ReadBufFromFile( wav_file, pcm_data, nOff, nSize ) ;
+		ff = g_fbp->GetFreqFromPcm( (short*)pcm_data, nSize/2, "do_test_wave_proc" ) ;
+		if ( ff<=0 )
+			ff = 0 ;
+	}
+	__finally
+	{
+		FreeBuf( pcm_data ) ;
 	}
 	return ( 0 ) ;
 }
@@ -6465,7 +6464,9 @@ long test_proc( char *DataValue )
 	if ( do_task( 201, "" )>0 )
 	{
 		sscanf( g_waveForm_rect_vars, "%lu %lu", &g_waveForm_aa, &g_waveForm_bb ) ;
+		do_task( 101, "" ) ;
 		make_pan_dc_memory_buf( g_waveForm_DC, g_waveForm_aa, g_waveForm_bb ) ;
+		g_fbp->make_xy_buf( g_waveForm_aa ) ;
 	}
 
 	clear_waveForm_area() ;
