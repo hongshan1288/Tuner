@@ -527,7 +527,7 @@ bool TFreqByPcm::like_SameData( long i1, long i2, long pd_nn )
 		return ( false ) ;
 }
 //////////////////////////////////////////////////////////////////////
-void TFreqByPcm::push_NextData( long i, long next_ii, long idx )
+void TFreqByPcm::push_SameNextData( long i, long next_ii, long idx )
 {
 	PeriodData_Type	*pd ;
 	pd = &m_PeriodData[i] ;
@@ -544,7 +544,7 @@ long TFreqByPcm::get_SameData( long i, long pd_nn )
 			dy_tot = get_DyTot( i, ii, pd_nn ) ;
 			if ( dy_tot<=m_Max_DyTot )
 			{
-				push_NextData( i, ii, 0 ) ;
+				push_SameNextData( i, ii, 0 ) ;
 				return (ii) ;
 			}
 		}
@@ -627,7 +627,7 @@ long TFreqByPcm::get_SameData2( long i, long pd_nn )
 			dy_tot = get_DyTot22( i, ii, pd_nn ) ;
 			if ( dy_tot>=m_Max_DyTot2 )
 			{
-				push_NextData( i, ii, 1 ) ;
+				push_SameNextData( i, ii, 1 ) ;
 				return (ii) ;
 			}
 		}
@@ -732,8 +732,12 @@ long TFreqByPcm::GetFreqFromPcm( short *pcm_data, long pcm_len, char *from_proc 
 		make_flat_data( m_pcm_data, m_pcm_len ) ;
 		show_PcmData( m_pcm_data, m_pcm_len, RGB(50,50,50), RGB(100,100,100) ) ;
 
-		make_seg_data( m_pcm_data, m_pcm_len ) ;
-		show_SegData( RGB(80,20,20) ) ;
+		make_SegData( m_pcm_data, m_pcm_len ) ;
+		show_SegData( 0, RGB(50,20,20) ) ;
+		remove_SomeSegData( 1-0.618 ) ;
+		set_MaxDxSegData( 0.85 ) ;
+//		make_SegDataDy( 10 ) ;
+		show_SegData( 1, RGB(50,50,20) ) ;
 
 	}
 	__finally
@@ -771,6 +775,7 @@ long TFreqByPcm::push_SegData( short ff, long ix, double xx )
 	sd->xx = xx ;
 	sd->ix = ix ;
 	sd->ff = ff ;
+	sd->xx_level = 0 ;
 
 	if ( m_SegData_m>=m_SegData_n )
 		set_SegData_Len( m_SegData_n+1000 ) ;
@@ -807,7 +812,7 @@ double TFreqByPcm::get_xx( long i, long y0, long yy )
 	return ( xx ) ;
 }
 //////////////////////////////////////////////////////////////////////
-void TFreqByPcm::make_seg_data( short *pcm_data, long pcm_len )
+void TFreqByPcm::make_SegData( short *pcm_data, long pcm_len )
 {
 	long	i, ff, yy, y0 ;
 	double	xx ;
@@ -851,11 +856,174 @@ void TFreqByPcm::make_seg_data( short *pcm_data, long pcm_len )
 		}
 		y0 = yy ;
 	}
-	push_SegData( 1002, i-1, 0 ) ;
+//	push_SegData( 1002, i-1, pcm_len-1 ) ;
 }
 //////////////////////////////////////////////////////////////////////
-void TFreqByPcm::show_SegData( long show_color )
+void TFreqByPcm::show_SegData( long di, long show_color )
 {
+	long	i, ix, dx_color ;
+	double	xx ;
+	char	ss[50] ;
+
+	m_LineMode = PS_SOLID ;
+	for ( i=0; i<m_SegData_m; i++ )
+	{
+
+		xx = m_SegData[i].xx ;
+		ix = m_SegData[i].ix ;
+		sprintf( ss, "%ld-%ld", i, ix ) ;
+		if ( m_SegData[i].xx_level>0 )
+			dx_color = 0x00505050 ;
+		else
+			dx_color = 0x000000 ;
+		if ( ( i % 2 )==0 )
+			draw_VLine( xx, 0, di, -5, show_color+dx_color, ss ) ;
+		else
+			draw_VLine( xx, 0, di, -20, show_color+dx_color, ss ) ;
+	}
+}
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+long TFreqByPcm::get_DyTotFromSegData( long i1, long i2, long pd_nn )
+{
+	long	i, nn, dy_tot ;
+	long	ii1, ii2 ;
+
+	dy_tot = 0 ;
+
+	nn = m_PeriodData[i1].ix-m_PeriodData[i1-pd_nn].ix ;
+	ii1 = m_PeriodData[i1-pd_nn].ix ;
+	ii2 = m_PeriodData[i2-pd_nn].ix ;
+	for ( i=0; i<nn; i++ )
+	{
+		dy_tot += abs(m_pcm_data[i+ii1]-m_pcm_data[i+ii2] ) ;
+	}
+	dy_tot /= m_FlatVV ;
+	dy_tot /= nn ;
+	return ( dy_tot ) ;
+}
+//////////////////////////////////////////////////////////////////////
+bool TFreqByPcm::like_NextSegData( long i1, long i2, long pd_nn, double max_dx )
+{
+	long	i ;
+	double	dx1, dx2 ;
+
+	dx1 = dx2 = 0 ;
+	for ( i=0; i<pd_nn; i++ )
+	{
+		dx1 += m_SegData[i+i1].xx-m_SegData[i+i1-1].xx ;
+		dx2 += m_SegData[i+i2].xx-m_SegData[i+i2-1].xx ;
+	}
+	if ( fabs(dx2-dx1)<=max_dx )
+		return ( true ) ;
+	else
+		return ( false ) ;
+}
+//////////////////////////////////////////////////////////////////////
+void TFreqByPcm::push_NextSegData( long idx, long i, long next_ii )
+{
+	SegData_Type	*sd ;
+	sd = &m_SegData[i] ;
+	sd->next_ii[idx] = next_ii ;
+}
+//////////////////////////////////////////////////////////////////////
+long TFreqByPcm::set_NextSegData( long idx, long i, long pd_nn, double max_dx, long max_dyTot )
+{
+	long	ii, dy_tot ;
+	for ( ii=i+pd_nn; ii<m_SegData_m; ii++ )
+	{
+		if ( like_NextSegData( i, ii, pd_nn, max_dx ) )
+		{
+			dy_tot = get_DyTotFromSegData( i, ii, pd_nn ) ;
+			if ( dy_tot<=max_dyTot )
+			{
+				push_NextSegData( idx, i, ii ) ;
+				return (ii) ;
+			}
+		}
+	}
+	return ( -1 ) ;
+}
+//////////////////////////////////////////////////////////////////////
+void TFreqByPcm::make_NextSegData( long idx, long n, double max_dx, long max_dyTot )
+{
+	long	i, f, m ;
+
+	m_SegData_m = 0 ;
+	m = 0 ;
+	for ( i=n; i<m_SegData_m; i++ )
+	{
+		f = set_NextSegData( idx, i, n, max_dx, max_dyTot ) ;
+		if ( f<0 )
+		{
+			m ++ ;
+			if ( m>3 )
+				break ;
+		}
+		else
+			m = 0 ;
+	}
+}
+//////////////////////////////////////////////////////////////////////
+void TFreqByPcm::remove_SomeSegData( double min_dx )
+{
+	long	i, ii, nn ;
+	double	dx, dx_avg ;
+
+	// 1. 计算dx的平均值
+	dx_avg = 0 ;
+	for ( i=1; i<m_SegData_m; i++ )
+		dx_avg += m_SegData[i].xx-m_SegData[i-1].xx ;
+	dx_avg /= m_SegData_m-1 ;
+	dx_avg *= min_dx ;
+
+	// 2. 去除小于平均值百分比（0.2）的点
+	ii = 0 ;
+	for ( i=1; i<m_SegData_m; )
+	{
+		dx = m_SegData[i].xx-m_SegData[ii].xx ;
+		if ( dx<dx_avg )
+		{
+			nn = m_SegData_m-i ;
+//			CopyMemory( &m_SegData[ii], &m_SegData[i], nn*sizeof(SegData_Type) ) ;
+			CopyMemory( &m_SegData[i], &m_SegData[i+1], nn*sizeof(SegData_Type) ) ;
+			m_SegData_m -- ;
+		}
+		else
+		{
+			ii = i ;
+			i ++ ;
+		}
+	}
+}
+//////////////////////////////////////////////////////////////////////
+void TFreqByPcm::set_MaxDxSegData( double dx_ratio )
+{
+	long	i ;
+	double	dx, dx_max ;
+
+	// 1. 计算dx的最大值
+	dx_max = 0 ;
+	for ( i=1; i<m_SegData_m; i++ )
+	{
+		dx = m_SegData[i].xx-m_SegData[i-1].xx ;
+		if ( dx_max<dx )
+			dx_max = dx ;
+	}
+	dx_max *= dx_ratio ;
+
+	// 2. 设置接近最大值的点
+	for ( i=1; i<m_SegData_m; i++ )
+	{
+		dx = m_SegData[i].xx-m_SegData[i-1].xx ;
+		if ( dx>=dx_max )
+			m_SegData[i].xx_level = 1 ;
+	}
+}
+//////////////////////////////////////////////////////////////////////
+void TFreqByPcm::make_SegDataDy( long dx_nn )
+{
+/**
 	long	i, ix ;
 	double	xx ;
 	char	ss[50] ;
@@ -865,15 +1033,14 @@ void TFreqByPcm::show_SegData( long show_color )
 	{
 		xx = m_SegData[i].xx ;
 		ix = m_SegData[i].ix ;
-		sprintf( ss, "%ld-%ld", i, ix ) ;
+		sprintf( ss, "%ld-%ld-%1.2lf", i, ix, m_SegData[i].xx ) ;
 		if ( ( i % 2 )==0 )
 			draw_VLine( xx, 0, 0, -5, show_color, ss ) ;
 		else
 			draw_VLine( xx, 0, 0, -20, show_color, ss ) ;
 	}
+**/
 }
-//////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 

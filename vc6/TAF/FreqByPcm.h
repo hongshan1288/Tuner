@@ -33,6 +33,7 @@ struct	SegData_Type
 	double	xx ;
 	short	ff ;
 	long	ix ;
+	short	xx_level ;
 	double	yy[20] ; // 可以改成10试试
 	long	next_ii[2] ;
 } ;
@@ -103,7 +104,7 @@ private:
 	long		m_Max_In, m_Max_DySum, m_Max_DyTot ;
 
 	void show_NextData( long idx, long y_off, long show_color, long line_mode ) ;
-	void push_NextData( long i, long next_ii, long idx ) ;
+	void push_SameNextData( long i, long next_ii, long idx ) ;
 
 	long	get_DyTot( long i1, long i2, long pd_nn ) ;
 	bool	like_SameData( long i, long ii, long pd_nn ) ;
@@ -134,10 +135,18 @@ private:
 
 	long get_sign( long yy ) ;
 	double get_xx( long i, long y0, long yy ) ;
-	void make_seg_data( short *pcm_data, long pcm_len ) ;
-	void show_SegData( long show_color ) ;
+	void make_SegData( short *pcm_data, long pcm_len ) ;
+	void remove_SomeSegData( double min_dx ) ;
+	void set_MaxDxSegData( double dx_ratio ) ;
+	void make_SegDataDy( long dx_nn ) ;
+	void show_SegData( long di, long show_color ) ;
 
 
+	long get_DyTotFromSegData( long i1, long i2, long pd_nn ) ;
+	bool like_NextSegData( long i1, long i2, long pd_nn, double max_dx ) ;
+	void push_NextSegData( long idx, long i, long next_ii ) ;
+	long set_NextSegData( long idx, long i, long pd_nn, double max_dx, long max_dyTot ) ;
+	void make_NextSegData( long idx, long n, double max_dx, long max_dyTot ) ;
 
 
 public:
