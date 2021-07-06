@@ -22,6 +22,13 @@ short	*g_int_data ;
 POINT	*g_waveForm_xy ;
 long	g_waveForm_xy_len ;
 long	g_waveForm_xy_nn, g_waveForm_xy_ca ;
+
+char	g_logFile[500] ;
+char	g_logFile2[500] ;
+char	g_tjFile[500] ;
+
+char	g_wavFile[500] ;
+
 //////////////////////////////////////////////////////////////////////
 void __Fire_Event( long StateNo, long StateValue ) 
 {

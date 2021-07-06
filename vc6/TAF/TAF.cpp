@@ -10,13 +10,6 @@
 //#define from_proc_prt	log_printf_ex
 #define from_proc_prt	//
 
-// log_printf
-#ifdef _DEBUG
-	#define log_prt		log_printf_ex
-#else
-	#define log_prt		//
-#endif
-
 #define MAX_PCM_DIV		10
 #define	MIN_AMP_MEAN	5
 
@@ -264,10 +257,6 @@ double	g_curFreq=0, g_showFreq=0 ;
 
 long	g_test=0 ;
 char	g_cur_file[500] ;
-char	g_logFile[500] ;
-char	g_logFile2[500] ;
-char	g_tjFile[500] ;
-
 
 long	g_xx_div ;
 long	g_pcm_data_max, g_pcm_data_pos ;
@@ -6441,6 +6430,7 @@ long do_test_wave_proc( char *wav_file )
 	nOff = 44 ;
 	nSize = Get_FileSize( wav_file ) ;
 
+	strcpy( g_wavFile, wav_file ) ;
 
 	nSize -= nOff ;
 	pcm_data = (short*)GlobalAlloc( GPTR, nSize ) ;

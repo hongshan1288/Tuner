@@ -26,6 +26,13 @@
 	} \
 }
 
+// log_printf
+#ifdef _DEBUG
+	#define log_prt		log_printf_ex
+#else
+	#define log_prt		//
+#endif
+
 //////////////////////////////////////////////////////////////////////
 extern HWND	g_CallBack_Handle ;
 extern HWND	g_waveForm_wnd, g_dataInfo_wnd ;
@@ -40,6 +47,13 @@ extern LPBYTE	g_waveForm_pan_dc_buf ;
 extern short	*g_int_data ;
 extern POINT	*g_waveForm_xy ;
 extern long	g_waveForm_xy_len ;
+
+extern char	g_logFile[500] ;
+extern char	g_logFile2[500] ;
+extern char	g_tjFile[500] ;
+extern char	g_wavFile[500] ;
+
+
 //////////////////////////////////////////////////////////////////////
 extern void _Fire_Event( long StateNo, long StateValue, char *StateName, char *srcFile, long srcLine ) ;
 #define PopEvent( sNo, sVal, sName )		_Fire_Event( (sNo), (sVal), (sName), __FILE__, __LINE__ )

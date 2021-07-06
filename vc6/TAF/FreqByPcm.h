@@ -9,54 +9,42 @@
 #pragma once
 #endif // _MSC_VER > 1000
 
-struct	SameData_Type
-{
-	long	cur_ii, next_ii, pd_nn ;
-	long	in_tot, dy_sum, dy_tot ;
-} ;
-
-struct	NextData_Type
-{
-	long	next_ii ;
-} ;
-
-struct	PeriodData_Type
-{
-	long	ix, in ;
-	short	ff ; 
-	long	dy_sum ;
-	long	next_ii[2] ;
-} ;
-
-struct	SegData_Type
-{
-	double	xx ;
-	short	ff ;
-	long	ix ;
-	short	xx_level ;
-	double	yy[20] ; // 可以改成10试试
-	long	next_ii[2] ;
-} ;
-
+#include "GetFreqType.h"
+//////////////////////////////////////////////////////////////////////
+#include "TJDataProc.h"
+#include "TMakeZQData_1.h"
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
 class TFreqByPcm  
 {
 private:
 
 	double				m_dx ;
 
-	long	m_LineMode ;
-	long	m_FlatVV ;
 	double	m_MinVV ;
-
 	long	m_DC_line_color ;
 
-	bool	m_DCFlag ;
-	bool	m_MemFlag ;
 
+/**
+	// PcmData
+	short				*m_pcm_data ;
+	long				m_pcm_len ;
+
+
+/**
 	void do_DrawText( char *pText, long xx, long yy, long font_color, long bk_color, long text_align, long text_valign ) ;
 	void do_DrawLine( long x1, long y1, long x2, long y2, long line_width, long line_color, long line_style, long line_mode ) ;
 	void do_Polyline( POINT *xy, long xy_nn, long line_width, long line_color, long line_style, long line_mode  ) ;
 	void do_DrawBar( long x1, long y1, long x2, long y2, long bar_color, long bar_style, long bar_mode ) ;
+
+	void draw_VLine( double xx, long y1, long y2, long xoff, long fx, long show_color, char *sa ) ;
+	void draw_VerticalLine( long ii, long xoff, long fx, long show_color, char *sa ) ;
+
+**/
 
 	POINT	*m_waveForm_xy ;
 	long	m_waveForm_xy_nn, m_waveForm_xy_size ;
@@ -68,10 +56,6 @@ private:
 	// check too small wav data as a noise data
 	bool check_pcm_data_is_a_noise( short *pcm_data, long pcm_len ) ;
 
-
-	// PcmData
-	short				*m_pcm_data ;
-	long				m_pcm_len ;
 
 	char				*m_dy_data ;
 	void make_dy_data( short *pcm_data, long pcm_len ) ;
@@ -93,8 +77,6 @@ private:
 	long	get_PeriodData_yy( short *pcm_data, long ix, long n ) ;
 
 	void show_PeriodData( long show_color ) ;
-	void draw_VLine( double xx, long yy, long xoff, long fx, long show_color, char *sa ) ;
-	void draw_VerticalLine( long ii, long xoff, long fx, long show_color, char *sa ) ;
 
 	SameData_Type	*m_SameData ;
 	long			m_SameData_m, m_SameData_n ;
@@ -125,29 +107,11 @@ private:
 
 
 
-	// seg data
 
-	SegData_Type	*m_SegData ;
-	long		m_SegData_m, m_SegData_n ;
+	TJDataProc	*m_TJProc ;
 
-	void	set_SegData_Len( long nn ) ;
-	long	push_SegData( short ff, long ix, double xx ) ;
-
-	long get_sign( long yy ) ;
-	double get_xx( long i, long y0, long yy ) ;
-	void make_SegData( short *pcm_data, long pcm_len ) ;
-	void remove_SomeSegData( double min_dx ) ;
-	void set_MaxDxSegData( double dx_ratio ) ;
-	void make_SegDataDy( long dx_nn ) ;
-	void show_SegData( long di, long show_color ) ;
-
-
-	long get_DyTotFromSegData( long i1, long i2, long pd_nn ) ;
-	bool like_NextSegData( long i1, long i2, long pd_nn, double max_dx ) ;
-	void push_NextSegData( long idx, long i, long next_ii ) ;
-	long set_NextSegData( long idx, long i, long pd_nn, double max_dx, long max_dyTot ) ;
-	void make_NextSegData( long idx, long n, double max_dx, long max_dyTot ) ;
-
+	TMakeZQData_1	*m_Make1 ;
+	void MakeZQData_proc1() ;
 
 public:
 

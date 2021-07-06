@@ -5,6 +5,7 @@
 #include "stdafx.h"
 #include "FreqByPcm.h"
 #include "ComUtils.h"
+#include "DoDrawUtils.h"
 
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
@@ -30,55 +31,32 @@ TFreqByPcm::TFreqByPcm()
 	m_SameData_n = 0 ;
 	set_SameData_Len( 500 ) ;
 
-	m_pcm_data = NULL ;
+//	m_pcm_data = NULL ;
 
 	m_DCFlag = false ;
 	m_MemFlag = true ;
 
+/**
+	m_SegYY_m = 0 ;
+	m_SegYY_n = 0 ;
+	set_SegYY_Len( 1000 ) ;
+
 	m_SegData_m = 0 ;
 	m_SegData_n = 0 ;
-	set_SegData_Len( 1000 ) ;
+	set_SegData_Len( 100 ) ;
+**/
+
+	m_TJProc = new TJDataProc ;
+	m_Make1 = new TMakeZQData_1 ;
 
 }
 //////////////////////////////////////////////////////////////////////
 TFreqByPcm::~TFreqByPcm()
 {
-
+	delete m_TJProc ;
+	delete m_Make1 ;
 }
 //////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////
-void TFreqByPcm::do_DrawText( char *pText, long xx, long yy, long font_color, long bk_color, long text_align, long text_valign )
-{
-	if ( m_DCFlag )
-		DrawText( g_waveForm_DC, pText, xx, yy, font_color, bk_color, text_align, text_valign ) ;
-	if ( m_MemFlag )
-		DrawText( g_waveForm_DC_mem, pText, xx, yy, font_color, bk_color, text_align, text_valign ) ;
-}
-//////////////////////////////////////////////////////////////////////
-void TFreqByPcm::do_DrawLine( long x1, long y1, long x2, long y2, long line_width, long line_color, long line_style, long line_mode )
-{
-	if ( m_DCFlag )
-		DrawLine( g_waveForm_DC, x1, y1, x2, y2, line_width, line_color, line_style, line_mode ) ;
-	if ( m_MemFlag )
-		DrawLine( g_waveForm_DC_mem, x1, y1, x2, y2, line_width, line_color, line_style, line_mode ) ;
-}
-//////////////////////////////////////////////////////////////////////
-void TFreqByPcm::do_Polyline( POINT *xy, long xy_nn, long line_width, long line_color, long line_style, long line_mode  )
-{
-	if ( m_DCFlag )
-		PolyLine( g_waveForm_DC, xy, xy_nn, line_width, line_color, line_style, line_mode ) ;
-	if ( m_MemFlag )
-		PolyLine( g_waveForm_DC_mem, xy, xy_nn, line_width, line_color, line_style, line_mode ) ;
-}
-//////////////////////////////////////////////////////////////////////
-void TFreqByPcm::do_DrawBar( long x1, long y1, long x2, long y2, long bar_color, long bar_style, long bar_mode )
-{
-	if ( m_DCFlag )
-		DrawBar( g_waveForm_DC, x1, y1, x2, y2, bar_color, bar_style, bar_mode ) ;
-	if ( m_MemFlag )
-		DrawBar( g_waveForm_DC_mem, x1, y1, x2, y2, bar_color, bar_style, bar_mode ) ;
-}
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
@@ -391,31 +369,6 @@ void TFreqByPcm::show_PeriodData( long show_color )
 	}
 }
 //////////////////////////////////////////////////////////////////////
-void TFreqByPcm::draw_VLine( double xx, long yy, long xoff, long fx, long show_color, char *sa )
-{
-	long	x, y, y00 ;
-	double	dx ;
-
-	y00 = g_waveForm_bb / 2 ;
-
-	dx = g_waveForm_aa ;
-	dx /= m_pcm_len ;
-
-	x = (long)floor(xx*dx) ;
-	x += xoff ;
-	y = get_waveForm_y( yy, y00 ) ;
-
-	do_DrawLine( x, y, x, g_waveForm_bb, 1, show_color, m_LineMode, R2_COPYPEN ) ;
-
-	if ( sa[0] != '\0' )
-		do_DrawText( sa, x, g_waveForm_bb, show_color, g_waveForm_backColor, 10, fx ) ;
-}
-//////////////////////////////////////////////////////////////////////
-void TFreqByPcm::draw_VerticalLine( long ii, long xoff, long fx, long show_color, char *sa )
-{
-	draw_VLine( (double)(ii-1), m_pcm_data[ii], xoff, fx, show_color, sa ) ;
-}
-//////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
@@ -699,7 +652,7 @@ long TFreqByPcm::GetFreqFromPcm( short *pcm_data, long pcm_len, char *from_proc 
 	m_dx /= pcm_len ;
 
 	m_pcm_data = (short*)GlobalAlloc( GPTR, (pcm_len)*sizeof(short) ) ;
-	m_dy_data = (char*)GlobalAlloc( GPTR, (pcm_len)*sizeof(char) ) ;
+//	g_dy_data = (char*)GlobalAlloc( GPTR, (pcm_len)*sizeof(char) ) ;
 
 	__try
 	{
@@ -732,17 +685,26 @@ long TFreqByPcm::GetFreqFromPcm( short *pcm_data, long pcm_len, char *from_proc 
 		make_flat_data( m_pcm_data, m_pcm_len ) ;
 		show_PcmData( m_pcm_data, m_pcm_len, RGB(50,50,50), RGB(100,100,100) ) ;
 
+		MakeZQData_proc1() ;
+/**
 		make_SegData( m_pcm_data, m_pcm_len ) ;
-		show_SegData( 0, RGB(50,20,20) ) ;
-		remove_SomeSegData( 1-0.618 ) ;
-		set_MaxDxSegData( 0.85 ) ;
-//		make_SegDataDy( 10 ) ;
-		show_SegData( 1, RGB(50,50,20) ) ;
 
+//		show_SegData( 0, RGB(50,20,20), 0 ) ;
+
+		remove_SomeSegData( 1-0.618 ) ;
+//		set_MaxDxSegData( 0.85 ) ;
+
+		make_SegYY( 1 ) ;
+		make_NextSegData( 0, 3, 3.0, 5 ) ;
+
+		show_SegData( 1, RGB(50,50,20), 1 ) ;
+		show_NextSegData( 0, 20, RGB(80,80,50), PS_DASH ) ;
+**/
 	}
 	__finally
 	{
 		FreeBuf( m_pcm_data ) ;
+//		FreeBuf( g_dy_data ) ;
 	}
 
 	return ( 0 ) ;
@@ -751,296 +713,42 @@ long TFreqByPcm::GetFreqFromPcm( short *pcm_data, long pcm_len, char *from_proc 
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
-void TFreqByPcm::set_SegData_Len( long nn )
-{
-	SegData_Type	*sd ;
-	sd = (SegData_Type*)GlobalAlloc( GPTR, (nn)*sizeof(SegData_Type) ) ;
-	if ( m_SegData_n>0 && m_SegData != NULL ) 
-	{
-		CopyMemory( sd, m_SegData, m_SegData_n*sizeof(SegData_Type) ) ;
-		FreeBuf( m_SegData ) ;
-	}
-	m_SegData = sd ;
-	m_SegData_n = nn ;
-}
-//////////////////////////////////////////////////////////////////////
-long TFreqByPcm::push_SegData( short ff, long ix, double xx )
-{
-
-	SegData_Type	*sd ;
-
-	sd = m_SegData ;
-	sd += m_SegData_m++ ;
-
-	sd->xx = xx ;
-	sd->ix = ix ;
-	sd->ff = ff ;
-	sd->xx_level = 0 ;
-
-	if ( m_SegData_m>=m_SegData_n )
-		set_SegData_Len( m_SegData_n+1000 ) ;
-
-	return ( m_SegData_m-1 ) ;
-
-}
-//////////////////////////////////////////////////////////////////////
-inline long TFreqByPcm::get_sign( long yy )
-{
-	if ( yy>0 )
-		return ( 1 ) ;
-	else if ( yy<0 )
-		return ( -1 ) ;
-	else
-		return ( 0 ) ;
-}
-//////////////////////////////////////////////////////////////////////
-double TFreqByPcm::get_xx( long i, long y0, long yy )
-{
-	double	kk, xx ;
-
-	if ( yy==0 )
-		xx = i ;
-	else if ( y0==0 )
-		xx = i-1 ;
-	else
-	{
-		kk = -(yy-y0) ;
-		kk = 1 / kk ;
-		xx = kk*y0 ;
-		xx += i-1 ;
-	}
-	return ( xx ) ;
-}
-//////////////////////////////////////////////////////////////////////
-void TFreqByPcm::make_SegData( short *pcm_data, long pcm_len )
-{
-	long	i, ff, yy, y0 ;
-	double	xx ;
-
-	m_SegData_m = 0 ;
-
-	y0 = pcm_data[0];
-	ff = get_sign( y0 ) ;
-	for ( i=1; i<pcm_len; i++ )
-	{
-		yy = pcm_data[i];
-		if ( m_SegData_m==0 )
-		{
-			if ( y0<0 && yy>=0 ) // 第一个点一定是从负值到正值（包括0）
-			{
-				xx = get_xx( i, y0, yy ) ;
-				push_SegData( 1001, i-1, xx ) ;
-				ff = 1 ;
-			}
-		}
-		else
-		{
-			if ( ff>0 )
-			{
-				if ( yy<0 )
-				{
-					xx = get_xx( i, y0, yy ) ;
-					push_SegData( 1, i-1, xx ) ;
-					ff = get_sign( yy ) ;
-				}
-			}
-			else if ( ff<0 )
-			{
-				if ( yy>0 )
-				{
-					xx = get_xx( i, y0, yy ) ;
-					push_SegData( -1, i-1, xx ) ;
-					ff = get_sign( yy ) ;
-				}
-			}
-		}
-		y0 = yy ;
-	}
-//	push_SegData( 1002, i-1, pcm_len-1 ) ;
-}
-//////////////////////////////////////////////////////////////////////
-void TFreqByPcm::show_SegData( long di, long show_color )
-{
-	long	i, ix, dx_color ;
-	double	xx ;
-	char	ss[50] ;
-
-	m_LineMode = PS_SOLID ;
-	for ( i=0; i<m_SegData_m; i++ )
-	{
-
-		xx = m_SegData[i].xx ;
-		ix = m_SegData[i].ix ;
-		sprintf( ss, "%ld-%ld", i, ix ) ;
-		if ( m_SegData[i].xx_level>0 )
-			dx_color = 0x00505050 ;
-		else
-			dx_color = 0x000000 ;
-		if ( ( i % 2 )==0 )
-			draw_VLine( xx, 0, di, -5, show_color+dx_color, ss ) ;
-		else
-			draw_VLine( xx, 0, di, -20, show_color+dx_color, ss ) ;
-	}
-}
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
-long TFreqByPcm::get_DyTotFromSegData( long i1, long i2, long pd_nn )
-{
-	long	i, nn, dy_tot ;
-	long	ii1, ii2 ;
-
-	dy_tot = 0 ;
-
-	nn = m_PeriodData[i1].ix-m_PeriodData[i1-pd_nn].ix ;
-	ii1 = m_PeriodData[i1-pd_nn].ix ;
-	ii2 = m_PeriodData[i2-pd_nn].ix ;
-	for ( i=0; i<nn; i++ )
-	{
-		dy_tot += abs(m_pcm_data[i+ii1]-m_pcm_data[i+ii2] ) ;
-	}
-	dy_tot /= m_FlatVV ;
-	dy_tot /= nn ;
-	return ( dy_tot ) ;
-}
 //////////////////////////////////////////////////////////////////////
-bool TFreqByPcm::like_NextSegData( long i1, long i2, long pd_nn, double max_dx )
-{
-	long	i ;
-	double	dx1, dx2 ;
-
-	dx1 = dx2 = 0 ;
-	for ( i=0; i<pd_nn; i++ )
-	{
-		dx1 += m_SegData[i+i1].xx-m_SegData[i+i1-1].xx ;
-		dx2 += m_SegData[i+i2].xx-m_SegData[i+i2-1].xx ;
-	}
-	if ( fabs(dx2-dx1)<=max_dx )
-		return ( true ) ;
-	else
-		return ( false ) ;
-}
 //////////////////////////////////////////////////////////////////////
-void TFreqByPcm::push_NextSegData( long idx, long i, long next_ii )
-{
-	SegData_Type	*sd ;
-	sd = &m_SegData[i] ;
-	sd->next_ii[idx] = next_ii ;
-}
 //////////////////////////////////////////////////////////////////////
-long TFreqByPcm::set_NextSegData( long idx, long i, long pd_nn, double max_dx, long max_dyTot )
-{
-	long	ii, dy_tot ;
-	for ( ii=i+pd_nn; ii<m_SegData_m; ii++ )
-	{
-		if ( like_NextSegData( i, ii, pd_nn, max_dx ) )
-		{
-			dy_tot = get_DyTotFromSegData( i, ii, pd_nn ) ;
-			if ( dy_tot<=max_dyTot )
-			{
-				push_NextSegData( idx, i, ii ) ;
-				return (ii) ;
-			}
-		}
-	}
-	return ( -1 ) ;
-}
 //////////////////////////////////////////////////////////////////////
-void TFreqByPcm::make_NextSegData( long idx, long n, double max_dx, long max_dyTot )
+void TFreqByPcm::MakeZQData_proc1()
 {
-	long	i, f, m ;
+	m_Make1->make_seg_data() ;
 
-	m_SegData_m = 0 ;
-	m = 0 ;
-	for ( i=n; i<m_SegData_m; i++ )
-	{
-		f = set_NextSegData( idx, i, n, max_dx, max_dyTot ) ;
-		if ( f<0 )
-		{
-			m ++ ;
-			if ( m>3 )
-				break ;
-		}
-		else
-			m = 0 ;
-	}
-}
-//////////////////////////////////////////////////////////////////////
-void TFreqByPcm::remove_SomeSegData( double min_dx )
-{
-	long	i, ii, nn ;
-	double	dx, dx_avg ;
-
-	// 1. 计算dx的平均值
-	dx_avg = 0 ;
-	for ( i=1; i<m_SegData_m; i++ )
-		dx_avg += m_SegData[i].xx-m_SegData[i-1].xx ;
-	dx_avg /= m_SegData_m-1 ;
-	dx_avg *= min_dx ;
-
-	// 2. 去除小于平均值百分比（0.2）的点
-	ii = 0 ;
-	for ( i=1; i<m_SegData_m; )
-	{
-		dx = m_SegData[i].xx-m_SegData[ii].xx ;
-		if ( dx<dx_avg )
-		{
-			nn = m_SegData_m-i ;
-//			CopyMemory( &m_SegData[ii], &m_SegData[i], nn*sizeof(SegData_Type) ) ;
-			CopyMemory( &m_SegData[i], &m_SegData[i+1], nn*sizeof(SegData_Type) ) ;
-			m_SegData_m -- ;
-		}
-		else
-		{
-			ii = i ;
-			i ++ ;
-		}
-	}
-}
-//////////////////////////////////////////////////////////////////////
-void TFreqByPcm::set_MaxDxSegData( double dx_ratio )
-{
-	long	i ;
-	double	dx, dx_max ;
-
-	// 1. 计算dx的最大值
-	dx_max = 0 ;
-	for ( i=1; i<m_SegData_m; i++ )
-	{
-		dx = m_SegData[i].xx-m_SegData[i-1].xx ;
-		if ( dx_max<dx )
-			dx_max = dx ;
-	}
-	dx_max *= dx_ratio ;
-
-	// 2. 设置接近最大值的点
-	for ( i=1; i<m_SegData_m; i++ )
-	{
-		dx = m_SegData[i].xx-m_SegData[i-1].xx ;
-		if ( dx>=dx_max )
-			m_SegData[i].xx_level = 1 ;
-	}
-}
-//////////////////////////////////////////////////////////////////////
-void TFreqByPcm::make_SegDataDy( long dx_nn )
-{
 /**
-	long	i, ix ;
-	double	xx ;
-	char	ss[50] ;
+	// 2-3-5
+	m_Make1->make_next_data( 2, 1, 5 ) ;
+	m_Make1->show_seg_data( 0, 5, RGB(50,50,20), 1 ) ;
+	m_Make1->make_tj_data( m_TJProc, 0, "SegDatTJ-2-3-5" ) ;
 
-	m_LineMode = PS_SOLID ;
-	for ( i=0; i<m_SegData_m-1; i++ )
-	{
-		xx = m_SegData[i].xx ;
-		ix = m_SegData[i].ix ;
-		sprintf( ss, "%ld-%ld-%1.2lf", i, ix, m_SegData[i].xx ) ;
-		if ( ( i % 2 )==0 )
-			draw_VLine( xx, 0, 0, -5, show_color, ss ) ;
-		else
-			draw_VLine( xx, 0, 0, -20, show_color, ss ) ;
-	}
+	m_TJProc->print_tj_data( 0, 0 ) ;
+	m_TJProc->sort_tj_data( 0 ) ;
+	m_TJProc->print_tj_data( 0, 0 ) ;
 **/
+
+	// make_next_data2 by dy
+	m_Make1->make_next_data2( 1, 2, 1 ) ;
+	m_Make1->show_seg_data( 0, 5, RGB(50,50,20), 1 ) ;
+	m_Make1->make_tj_data( m_TJProc, 0, "SegDatTJ-2-3-5" ) ;
+
+//	m_TJProc->print_tj_data( 0, 0 ) ;
+
+//	m_TJProc->sort_tj_data( 0 ) ;
+//	m_TJProc->print_tj_data( 0, 0 ) ;
+
+//	m_TJProc->reverse_tj_data( 0 ) ;
+//	m_TJProc->print_tj_data( 0, 0 ) ;
+
 }
+//////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 
