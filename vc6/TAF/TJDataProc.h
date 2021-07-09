@@ -40,6 +40,8 @@ public:
 
 	void	set_pcm_len( long idx, long pcm_si, long pcm_ei ) ;
 
+	double	get_max_zq_val( long idx ) ;
+
 private:
 
 	double	m_zq_val, m_zq_dx ;

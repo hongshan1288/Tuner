@@ -798,3 +798,111 @@ void TMakeZQData_1::make_TJData2( TJDataProc *aTJProc, long idx, char *tjName )
 }
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+long TMakeZQData_1::get_DyTotFromSegData3( long i0, long i1, long i2 )
+{
+	long	i, nn ;
+	double	dy_tot ;
+	long	ii0, ii1 ;
+
+	dy_tot = 0 ;
+
+	nn = m_SegData[i1].SegYY_si-m_SegData[i0].SegYY_si ;
+	if ( nn>m_SegData[i2].SegYY_si-m_SegData[i1].SegYY_si )
+		nn = m_SegData[i2].SegYY_si-m_SegData[i1].SegYY_si ;
+	ii0 = m_SegData[i0].SegYY_si ;
+	ii1 = m_SegData[i1].SegYY_si ;
+	for ( i=0; i<nn; i++ )
+	{
+		dy_tot += fabs(m_SegYY[i+ii0].yy-m_SegYY[i+ii1].yy ) ;
+	}
+	dy_tot /= m_FlatVV ;
+	dy_tot /= nn ;
+	return ( (long)dy_tot ) ;
+}
+//////////////////////////////////////////////////////////////////////
+void TMakeZQData_1::push_NextSegData3( long i, long next_ii )
+{
+
+	SegData_Type	*sd ;
+	sd = &m_SegData[i] ;
+
+	sd->next_ii[0] = next_ii ;
+	sd->next_ff[0] = 1001 ;
+	sd->next_nn[0] = m_next_nn++ ;
+	
+}
+//////////////////////////////////////////////////////////////////////
+long TMakeZQData_1::get_Index_NextSegData3( long i, double zq_val, double max_dx )
+{
+	long	ii ;
+	double	xx, dx ;
+
+	xx = m_SegData[i].xx ;
+	for ( ii=i+1; ii<m_SegData_m; ii++ )
+	{
+		dx = m_SegData[ii].xx-xx ;
+		if ( fabs(dx-zq_val)<max_dx )
+			return ( ii ) ;
+	}
+	return ( -1 ) ;
+}
+//////////////////////////////////////////////////////////////////////
+void TMakeZQData_1::clear_next_data()
+{
+	long	i ;
+	for ( i=0; i<m_SegData_m; i++ )
+	{
+		m_SegData[i].next_ii[0] = 0;
+		m_SegData[i].next_ff[0] = 0;
+		m_SegData[i].next_nn[0] = 0;
+	}
+}
+//////////////////////////////////////////////////////////////////////
+long TMakeZQData_1::make_next_data3( double zq_len, double max_dx, long max_dyTot )
+{
+	long	i0, i1, i2, dy_tot ;
+
+	clear_next_data() ;
+	m_next_nn = 1 ;
+	i0 = -1 ;
+	i1 = -1 ;
+	while ( i1<0 )
+	{
+		i0 ++ ;
+		i1 = get_Index_NextSegData3( i0, zq_len, max_dx ) ;
+	}
+	while ( i1>0 )
+	{
+		i2 = get_Index_NextSegData3( i1, zq_len, max_dx ) ;
+		if ( i2<0 )
+		{
+			if ( m_next_nn>1 )
+				break ;
+			else
+			{
+				i0++ ;
+				i1 = get_Index_NextSegData3( i0, zq_len, max_dx ) ;
+			}
+		}
+		else 
+		{
+			dy_tot = get_DyTotFromSegData3( i0, i1, i2 ) ;
+log_prt( g_logFile, "make_next_data3 i0=%-5ld i1=%-5ld i2=%-5ld dy_tot=%-5ld max_dyTot=%-5ld\r\n", i0, i1, i2, dy_tot, max_dyTot ) ;
+			if ( dy_tot<=max_dyTot )
+			{
+				push_NextSegData3( i1, i2 ) ;
+			}
+			else
+				break ;
+			i0 = i1 ;
+			i1 = i2 ;
+		}
+	}
+	if ( m_SegData_m-i1<=i1-i0 )
+		return ( i1-i0 );
+	else
+		return ( -1 ) ;
+}
+//////////////////////////////////////////////////////////////////////

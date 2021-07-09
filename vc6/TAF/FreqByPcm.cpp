@@ -735,11 +735,16 @@ void TFreqByPcm::MakeZQData_proc1()
 
 	// make_next_data2 by dy
 	m_Make1->make_next_data2( 1, 2, 1 ) ;
-	m_Make1->show_seg_data( 0, 5, RGB(50,50,20), 1 ) ;
+//	m_Make1->show_seg_data( 0, 5, RGB(50,50,20), 1 ) ;
 	m_Make1->make_tj_data( m_TJProc, 0, "SegDatTJ-2-3-5" ) ;
+
 	// to do
 	// 按照最大周期再找SegData中进行一次计算
-	// make_next_data3( max_zq_val ) ;
+	double max_zq_val ;
+	max_zq_val = m_TJProc->get_max_zq_val( 0 ) ;
+	m_Make1->make_next_data3( max_zq_val, 5, 10 ) ;
+	m_Make1->show_seg_data( 0, 5, RGB(50,50,20), 1 ) ;
+	m_Make1->make_tj_data( m_TJProc, 0, "last" ) ;
 
 //	m_TJProc->print_tj_data( 0, 0 ) ;
 

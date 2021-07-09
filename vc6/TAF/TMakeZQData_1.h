@@ -25,6 +25,7 @@ public:
 
 	void	make_next_data( long n, double max_dx, long max_dyTot ) ;
 	void	make_next_data2( long n, double max_dx, long max_dyTot ) ;
+	long	make_next_data3( double zq_len, double max_dx, long max_dyTot ) ;
 
 	void	make_tj_data( TJDataProc *aTJProc, long idx, char *tjName ) ;
 
@@ -83,6 +84,13 @@ private:
 	long make_TJData2Ex( TJDataProc *aTJProc, long idx, long nn ) ;
 	void make_TJData2( TJDataProc *aTJProc, long idx, char *tjName ) ;
 
+
+	long	m_next_nn ;
+	void clear_next_data() ;
+	void push_NextSegData3( long i, long next_ii ) ;
+	long get_DyTotFromSegData3( long i0, long i1, long i2 ) ;
+	long get_Index_NextSegData3( long i, double zq_val, double max_dx ) ;
+	long set_NextSegData3( long i0, long i, double zq_val, long max_dyTot ) ;
 
 };
 //////////////////////////////////////////////////////////////////////

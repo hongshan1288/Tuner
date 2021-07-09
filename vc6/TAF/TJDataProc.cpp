@@ -340,4 +340,22 @@ void TJDataProc::shrink_tj_data( long idx )
 		}
 	}
 }
+/////////////////////////////////////////////////////////////////////////////
+double TJDataProc::get_max_zq_val( long idx )
+{
+	long	i, mm ;
+	double	zq_val ;
+	TJData_Type *tj_data ;
+
+	tj_data = m_TJ[idx].tjData ;
+	mm = m_TJ[idx].tjData_m ;
+	zq_val = 0 ;
+	for ( i=0; i<mm; i++ )
+	{
+		zq_val = tj_data[i].zq_val ;
+		if ( zq_val<tj_data[i].zq_val )
+			zq_val = tj_data[i].zq_val ;
+	}
+	return ( zq_val ) ;
+}
 //////////////////////////////////////////////////////////////////////
