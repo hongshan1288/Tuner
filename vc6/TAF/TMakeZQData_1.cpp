@@ -419,8 +419,6 @@ bool TMakeZQData_1::like_NextSegData2( long i1, long i2, long comp_nn, double ma
 		dx2 += m_SegData[i+i2].xx-m_SegData[i+i2-1].xx ;
 	}
 	dx = fabs(dx2-dx1)/comp_nn ;
-//	dx1 *= 0.1 ;
-//	dx /= dx1 ;
 	if ( dx<=max_dx )
 		return ( true ) ;
 	else
@@ -434,6 +432,9 @@ void TMakeZQData_1::push_NextSegData2( long i, long next_ii )
 	sd->next_ii[0] = next_ii ;
 	sd->next_ff[0] = 0 ;
 	sd->next_nn[0] = 0 ;
+	if ( m_next_si<0 )
+		m_next_si = i ;
+	m_next_ei = i ;
 }
 //////////////////////////////////////////////////////////////////////
 long TMakeZQData_1::set_NextSegData2( long i, long comp_nn, double max_dx, long max_dyTot )
@@ -458,6 +459,7 @@ void TMakeZQData_1::make_next_data2( long comp_nn, double max_dx, long max_dyTot
 {
 	long	i, f, m ;
 
+	m_next_si = -1 ;
 	m = 0 ;
 	for ( i=comp_nn; i<m_SegData_m-comp_nn; i++ )
 	{
@@ -471,7 +473,6 @@ void TMakeZQData_1::make_next_data2( long comp_nn, double max_dx, long max_dyTot
 		else
 			m = 0 ;
 	}
-
 	make_next_ff() ;
 	set_all_next_ff() ;
 
@@ -501,7 +502,7 @@ void TMakeZQData_1::make_next_ff()
 	long	i, next_ii ;
 
 	m_next_ff = 1 ;
-	for ( i=0; i<m_SegData_m; i++ )
+	for ( i=m_next_si; i<=m_next_ei; i++ )
 	{
 		if ( m_SegData[i].next_ff[0]>0 )
 			continue ;
@@ -520,7 +521,7 @@ void TMakeZQData_1::set_all_next_ff_ex( long next_ff, long val )
 {
 	long	i, nn ;
 	nn = 1 ;
-	for ( i=0; i<m_SegData_m; i++ )
+	for ( i=m_next_si; i<=m_next_ei; i++ )
 	{
 		if ( next_ff == m_SegData[i].next_ff[0] )
 		{
@@ -535,7 +536,7 @@ void TMakeZQData_1::set_all_next_ff()
 	long	i, k, next_ff ;
 
 	next_ff = 0 ;
-	for ( i=0; i<m_SegData_m; i++ )
+	for ( i=m_next_si; i<=m_next_ei; i++ )
 	{
 		if ( m_SegData[i].next_ff[0]<1000 )
 		{
@@ -660,9 +661,9 @@ void TMakeZQData_1::make_TJData( TJDataProc *aTJProc, long idx, char *tjName )
 void TMakeZQData_1::make_tj_data( TJDataProc *aTJProc, long idx, char *tjName )
 {
 
-	make_TJData( aTJProc, idx, tjName ) ;
 	log_prt( g_logFile, "make_tj_data========================================================================%s\r\n", g_wavFile ) ;
-
+/**
+	make_TJData( aTJProc, idx, tjName ) ;
 	aTJProc->print_tj_data( 0, "original" ) ;
 
 	aTJProc->sort_tj_data( 0 ) ;
@@ -678,7 +679,6 @@ void TMakeZQData_1::make_tj_data( TJDataProc *aTJProc, long idx, char *tjName )
 
 	aTJProc->print_tj_data( 0, "group-sort-reversed" ) ;
 
-//	aTJProc->remove_tj_data( 0, 0 ) ;
 	aTJProc->remove_some_tj_data( 0 ) ;
 	aTJProc->print_tj_data( 0, "remove_some" ) ;
 
@@ -690,6 +690,111 @@ void TMakeZQData_1::make_tj_data( TJDataProc *aTJProc, long idx, char *tjName )
 	aTJProc->remove_some_tj_data( 0 ) ;
 	aTJProc->print_tj_data( 0, "remove_some" ) ;
 
+**/
+
+	make_TJData2( aTJProc, 0, tjName ) ;
+	log_prt( g_logFile, "make_TJData2==================\r\n" ) ;
+
+	aTJProc->print_tj_data( 0, "original" ) ;
+
+	aTJProc->group_tj_data( 0 ) ;
+	aTJProc->print_tj_data( 0, "group" ) ;
+
+	aTJProc->remove_some_tj_data( 0 ) ;
+
+	aTJProc->sort_tj_data( 0 ) ;
+	aTJProc->print_tj_data( 0, "sort-1" ) ;
+
+	aTJProc->reverse_tj_data( 0 ) ;
+	aTJProc->print_tj_data( 0, "reverse-1" ) ;
+
+//	aTJProc->sort_tj_data( 0 ) ;
+//	aTJProc->reverse_tj_data( 0 ) ;
+//	aTJProc->print_tj_data( 0, "group-sort-reversed" ) ;
+
+//	aTJProc->print_tj_data( 0, "remove_some" ) ;
+
+
+}
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+void TMakeZQData_1::clear_next_nn( long next_ff )
+{
+	long	i ;
+	for ( i=m_next_si; i<=m_next_ei; i++ )
+	{
+		if ( next_ff==m_SegData[i].next_ff[0] )
+		{
+			m_SegData[i].next_nn[0] = 0 ;
+		}
+	}
+}
+//////////////////////////////////////////////////////////////////////
+long TMakeZQData_1::make_TJData2Ex( TJDataProc *aTJProc, long idx, long nn )
+{
+
+	long	i, next_ff, max_nn ;
+
+	max_nn = 0 ;
+	next_ff = -1 ;
+	for ( i=m_next_si; i<=m_next_ei; i++ )
+	{
+		if ( m_SegData[i].next_ii[0]<=0 )
+			continue ;
+		if ( max_nn < m_SegData[i].next_nn[0] )
+		{
+			max_nn = m_SegData[i].next_nn[0] ;
+			next_ff = m_SegData[i].next_ff[0] ;
+		}
+	}
+log_prt( g_logFile, "make_TJData2==================nn=%ld max_nn=%ld next_ff=%ld\r\n", nn, max_nn, next_ff ) ;
+	if ( next_ff>=0 )
+	{
+		if ( nn>0 && max_nn<nn )
+		{
+			clear_next_nn( next_ff ) ;
+			return ( 0 ) ;
+		}
+		double	zq_dx, zq_val ;
+		long	next_ii ;
+
+		for ( i=m_next_si; i<=m_next_ei; i++ )
+		{
+			if ( m_SegData[i].next_ii[0]<=0 )
+				continue ;
+			if ( next_ff==m_SegData[i].next_ff[0] )
+			{
+				next_ii = m_SegData[i].next_ii[0] ;
+				zq_dx = m_SegData[i+1].xx-m_SegData[i].xx ;
+				zq_val = m_SegData[next_ii].xx-m_SegData[i].xx ;
+log_prt( g_logFile, "i=%ld next_ii=%ld zq_dx=%1.1lf zq_val=%1.1lf\r\n", i, next_ii, zq_dx, zq_val ) ;
+				aTJProc->push_tj_data( idx, zq_dx, zq_val ) ;
+			}
+		}
+		clear_next_nn( next_ff ) ;
+		return ( max_nn ) ;
+	}
+	else
+		return ( 0 ) ;
+}
+//////////////////////////////////////////////////////////////////////
+void TMakeZQData_1::make_TJData2( TJDataProc *aTJProc, long idx, char *tjName )
+{
+	aTJProc->set_tj_name( idx, tjName ) ;
+	aTJProc->clear_tj_data( idx ) ;
+
+	long	i, nn, ff ;
+
+	nn = make_TJData2Ex( aTJProc, idx, 0 ) ;
+	for ( i=0; i<5; i++ )
+	{
+		ff = make_TJData2Ex( aTJProc, idx, nn/2 ) ;
+		if ( ff<0 )
+			break ;
+	}
+	aTJProc->avg_tj_data( idx ) ;
 }
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////

@@ -70,11 +70,19 @@ private:
 
 	void make_TJData( TJDataProc *aTJProc, long idx, char *tjName ) ;
 
+
+	long	m_next_si, m_next_ei ;
+
 	long	m_next_ff ;
 	void push_next_ff( long si, long next_ii ) ;
 	void make_next_ff() ;
 	void set_all_next_ff() ;
 	void set_all_next_ff_ex( long next_ff, long val ) ;
+
+	void clear_next_nn( long next_ff ) ;
+	long make_TJData2Ex( TJDataProc *aTJProc, long idx, long nn ) ;
+	void make_TJData2( TJDataProc *aTJProc, long idx, char *tjName ) ;
+
 
 };
 //////////////////////////////////////////////////////////////////////

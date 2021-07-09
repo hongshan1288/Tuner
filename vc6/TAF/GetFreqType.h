@@ -59,6 +59,7 @@ struct	TJData_Type
 	double	zq_dx ;
 	double	zq_val ;
 	long	zq_tot ;
+	double	zq_sum ;
 } ;
 //////////////////////////////////////////////////////////////////////
 struct	TJ_Type

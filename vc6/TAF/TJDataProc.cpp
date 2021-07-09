@@ -12,8 +12,8 @@
 TJDataProc::TJDataProc()
 {
 	ZeroMemory( m_TJ, sizeof(TJ_Type)*10 ) ;
-	m_zq_val = 3.2 ;
-	m_zq_dx = 3.2 ;
+	m_zq_val = 1.2 ;
+	m_zq_dx = 1.2 ;
 }
 //////////////////////////////////////////////////////////////////////
 TJDataProc::~TJDataProc()
@@ -71,6 +71,7 @@ void	TJDataProc::push_tj_data( long idx, double zq_dx, double zq_val )
 	{
 		if ( fabs(zq_dx-m_TJ[idx].tjData[i].zq_dx)<=m_zq_dx && fabs(zq_val-m_TJ[idx].tjData[i].zq_val)<=m_zq_val )
 		{
+			m_TJ[idx].tjData[i].zq_sum += zq_val ;
 			m_TJ[idx].tjData[i].zq_tot++ ;
 			return ;
 		}
@@ -80,9 +81,24 @@ void	TJDataProc::push_tj_data( long idx, double zq_dx, double zq_val )
 		set_TJData_Len( idx, m_TJ[idx].tjData_n+10 ) ;
 
 	tjd = &m_TJ[idx].tjData[i] ;
+
 	tjd->zq_dx = zq_dx ;
 	tjd->zq_val = zq_val ;
 	tjd->zq_tot = 1 ;
+
+	tjd->zq_sum = zq_val ;
+}
+//////////////////////////////////////////////////////////////////////
+void	TJDataProc::avg_tj_data( long idx )
+{
+	long	i ;
+	for ( i=0; i<m_TJ[idx].tjData_m; i++ )
+	{
+		if ( m_TJ[idx].tjData[i].zq_tot>0 )
+		{
+			m_TJ[idx].tjData[i].zq_val = m_TJ[idx].tjData[i].zq_sum / m_TJ[idx].tjData[i].zq_tot ;
+		}
+	}
 }
 //////////////////////////////////////////////////////////////////////
 void	TJDataProc::set_pcm_len( long idx, long pcm_si, long pcm_ei ) 
@@ -104,11 +120,12 @@ void	TJDataProc::print_tjData( long idx, char print_name[] )
 	zq_len = 0 ;
 	for ( i=0; i<m_TJ[idx].tjData_m; i++ )
 	{
-		log_prt( g_logFile, "i=%-5ld dx=%-8.1lf val=%-8.1lf tot=%-5ld\r\n",
+		log_prt( g_logFile, "i=%-5ld dx=%-8.3lf val=%-8.3lf tot=%-5ld sum=%-8.3lf avg=%-8.1lf\r\n",
 						i, 
 						tj_data[i].zq_dx,
 						tj_data[i].zq_val,
-						tj_data[i].zq_tot
+						tj_data[i].zq_tot,
+						tj_data[i].zq_sum
 						) ;
 		zq_len += tj_data[i].zq_val*tj_data[i].zq_tot ;
 	}
@@ -237,7 +254,7 @@ void TJDataProc::remove_some_tj_data( long idx )
 	zq_tot = tj_data[0].zq_tot ;
 	for ( i=1; i<mm; i++ )
 	{
-		if ( tj_data[i].zq_tot<zq_tot/3 ) 
+		if ( tj_data[i].zq_tot<zq_tot/2 ) 
 			break ;
 	}
 	m_TJ[idx].tjData_m = i ;
@@ -261,13 +278,16 @@ void TJDataProc::group_tj_data( long idx )
 		{
 			if ( tj_data[k].zq_tot<=0 )
 				continue ;
-			if ( fabs( zq_val-tj_data[k].zq_val )<0.2*zq_val )
+			if ( fabs( zq_val-tj_data[k].zq_val )<3 )
 			{
+				tj_data[i].zq_sum += tj_data[k].zq_sum ;
 				tj_data[i].zq_tot += tj_data[k].zq_tot ;
 				tj_data[k].zq_tot = 0 ;
-			}
+				tj_data[k].zq_sum = 0 ;
+			}	
 		}
 	}
+	avg_tj_data( idx ) ;
 }
 /////////////////////////////////////////////////////////////////////////////
 void TJDataProc::shrink_tj_data( long idx )

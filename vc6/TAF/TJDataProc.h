@@ -24,6 +24,7 @@ public:
 	void	clear_tj_data( long idx ) ;
 
 	void	push_tj_data( long idx, double zq_dx, double zq_val ) ;
+	void	avg_tj_data( long idx ) ;
 
 	void	print_tj_data( long idx, char print_name[] ) ;
 	void	print_tj_tot( long idx ) ;
