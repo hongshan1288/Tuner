@@ -862,7 +862,7 @@ void TMakeZQData_1::clear_next_data()
 //////////////////////////////////////////////////////////////////////
 long TMakeZQData_1::make_next_data3( double zq_len, double max_dx, long max_dyTot )
 {
-	long	i0, i1, i2, dy_tot ;
+	long	ff, i0, i1, i2, dy_tot ;
 
 	clear_next_data() ;
 	m_next_nn = 1 ;
@@ -873,6 +873,7 @@ long TMakeZQData_1::make_next_data3( double zq_len, double max_dx, long max_dyTo
 		i0 ++ ;
 		i1 = get_Index_NextSegData3( i0, zq_len, max_dx ) ;
 	}
+	ff = 0 ;
 	while ( i1>0 )
 	{
 		i2 = get_Index_NextSegData3( i1, zq_len, max_dx ) ;
@@ -892,6 +893,11 @@ long TMakeZQData_1::make_next_data3( double zq_len, double max_dx, long max_dyTo
 log_prt( g_logFile, "make_next_data3 i0=%-5ld i1=%-5ld i2=%-5ld dy_tot=%-5ld max_dyTot=%-5ld\r\n", i0, i1, i2, dy_tot, max_dyTot ) ;
 			if ( dy_tot<=max_dyTot )
 			{
+				if ( ff==0 )
+				{
+					push_NextSegData3( i0, i1 ) ;
+					ff = 1 ;
+				}
 				push_NextSegData3( i1, i2 ) ;
 			}
 			else
