@@ -127,6 +127,10 @@ SOURCE=.\TJDataProc.cpp
 
 SOURCE=.\TMakeZQData_1.cpp
 # End Source File
+# Begin Source File
+
+SOURCE=.\TWavePeriod.cpp
+# End Source File
 # End Group
 # Begin Group "Header Files"
 
@@ -166,6 +170,10 @@ SOURCE=.\TJDataProc.h
 # Begin Source File
 
 SOURCE=.\TMakeZQData_1.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\TWavePeriod.h
 # End Source File
 # End Group
 # Begin Group "Resource Files"

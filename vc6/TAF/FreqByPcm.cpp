@@ -14,12 +14,19 @@
 TFreqByPcm::TFreqByPcm()
 {
 
+	m_PcmData_nn = 30 * 44100 ; // 30秒单声道的缓冲区
+	m_PcmData = (short*)GlobalAlloc(GPTR, m_PcmData_nn*sizeof(short) ) ;
+	m_PcmData_mm = 0 ;
+
+	m_pcm_data = m_PcmData ;
+
 	m_MinVV = 1000 ;
-	m_FlatVV = 3200/8 ;
+	m_FlatVV = 3200/8 ; // 平滑值
 
 	m_LineMode = PS_SOLID ;
-
 	m_DC_line_color = RGB( 100, 0, 0 ) ;
+
+
 
 	m_Period_dn = 1 ;
 
@@ -648,10 +655,7 @@ long TFreqByPcm::GetFreqFromPcm( short *pcm_data, long pcm_len, char *from_proc 
 	if ( check_pcm_data_is_a_noise( pcm_data, pcm_len ) )
 		return ( -1 ) ;
 
-	m_dx = g_waveForm_aa ;
-	m_dx /= pcm_len ;
-
-	m_pcm_data = (short*)GlobalAlloc( GPTR, (pcm_len)*sizeof(short) ) ;
+//	m_pcm_data = (short*)GlobalAlloc( GPTR, (pcm_len)*sizeof(short) ) ;
 //	g_dy_data = (char*)GlobalAlloc( GPTR, (pcm_len)*sizeof(char) ) ;
 
 	__try
@@ -683,7 +687,7 @@ long TFreqByPcm::GetFreqFromPcm( short *pcm_data, long pcm_len, char *from_proc 
 		m_pcm_len = pcm_len ;
 
 		make_flat_data( m_pcm_data, m_pcm_len ) ;
-		show_PcmData( m_pcm_data, m_pcm_len, RGB(50,50,50), RGB(100,100,100) ) ;
+		show_PcmData( m_pcm_data, m_pcm_len, RGB(10,50,10), RGB(10,100,10) ) ;
 
 		MakeZQData_proc1() ;
 /**
@@ -703,7 +707,7 @@ long TFreqByPcm::GetFreqFromPcm( short *pcm_data, long pcm_len, char *from_proc 
 	}
 	__finally
 	{
-		FreeBuf( m_pcm_data ) ;
+//		FreeBuf( m_pcm_data ) ;
 //		FreeBuf( g_dy_data ) ;
 	}
 
@@ -734,17 +738,22 @@ void TFreqByPcm::MakeZQData_proc1()
 **/
 
 	// make_next_data2 by dy
-	m_Make1->make_next_data2( 1, 2, 1 ) ;
-//	m_Make1->show_seg_data( 0, 5, RGB(50,50,20), 1 ) ;
+	m_Make1->make_next_data2( 1, 1, 5 ) ;
+	m_Make1->show_seg_data( 0, 5, RGB(20,50,20), 0, RGB(10,50,50) ) ;
 	m_Make1->make_tj_data( m_TJProc, 0, "SegDatTJ-2-3-5" ) ;
 
-	// to do
+
+
 	// 按照最大周期再找SegData中进行一次计算
 	double max_zq_val ;
 	max_zq_val = m_TJProc->get_max_zq_val( 0 ) ;
+
+log_prt( g_logFile, "max_zq_val=%-10.2lf\r\n", max_zq_val ) ;
+
 	m_Make1->make_next_data3( max_zq_val, 5, 10 ) ;
-	m_Make1->show_seg_data( 0, 5, RGB(50,50,20), 1 ) ;
+	m_Make1->show_seg_data( 0, 5, RGB(50,50,20), 0, RGB(80,50,10)  ) ;
 	m_Make1->make_tj_data( m_TJProc, 0, "last" ) ;
+
 
 //	m_TJProc->print_tj_data( 0, 0 ) ;
 

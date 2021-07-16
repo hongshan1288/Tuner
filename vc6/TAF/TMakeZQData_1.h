@@ -20,7 +20,7 @@ public:
 	TMakeZQData_1();
 	virtual ~TMakeZQData_1();
 
-	void	show_seg_data( long di, long y_off, long show_color, long show_yy ) ;
+	void	show_seg_data( long di, long y_off, long show_color, long SegYY_color, long next_color ) ;
 	void	make_seg_data() ;
 
 	void	make_next_data( long n, double max_dx, long max_dyTot ) ;
@@ -64,8 +64,9 @@ private:
 	void push_NextSegData( long i, long next_ii ) ;
 	long set_NextSegData( long i, long comp_nn, double max_dx, long max_dyTot ) ;
 
+	long get_DyTotFromSegData22( long i1, long i2, long comp_nn ) ;
 	long get_DyTotFromSegData2( long i1, long i2, long comp_nn ) ;
-	bool like_NextSegData2( long i1, long i2, long comp_nn, double max_dx ) ;
+	double like_NextSegData2( long i1, long i2, long comp_nn ) ;
 	void push_NextSegData2( long i, long next_ii ) ;
 	long set_NextSegData2( long i, long comp_nn, double max_dx, long max_dyTot ) ;
 
@@ -92,6 +93,7 @@ private:
 	long get_Index_NextSegData3( long i, double zq_val, double max_dx ) ;
 	long set_NextSegData3( long i0, long i, double zq_val, long max_dyTot ) ;
 
+	long get_PreIndex_NextSegData3( long i0, double zq_len, double max_dx ) ;
 };
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////

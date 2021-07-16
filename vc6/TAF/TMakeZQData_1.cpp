@@ -404,7 +404,26 @@ long TMakeZQData_1::get_DyTotFromSegData2( long i1, long i2, long comp_nn )
 		return ( 10000 ) ;
 }
 //////////////////////////////////////////////////////////////////////
-bool TMakeZQData_1::like_NextSegData2( long i1, long i2, long comp_nn, double max_dx )
+long TMakeZQData_1::get_DyTotFromSegData22( long i1, long i2, long comp_nn )
+{
+	long	i, nn ;
+	long	ii1, ii2 ;
+	double	tot_yy ;
+
+	nn = m_SegData[i1].SegYY_si-m_SegData[i1-comp_nn].SegYY_si ;
+	ii1 = m_SegData[i1-comp_nn].SegYY_si ;
+	ii2 = m_SegData[i2-comp_nn].SegYY_si ;
+
+	tot_yy = 0 ;
+	for ( i=0; i<nn; i++ )
+		tot_yy += fabs(m_SegYY[i+ii1].yy-m_SegYY[i+ii2].yy) ;
+
+	tot_yy /= m_FlatVV ;
+	tot_yy /= nn ;
+	return ( (long)(tot_yy) ) ;
+}
+//////////////////////////////////////////////////////////////////////
+double TMakeZQData_1::like_NextSegData2( long i1, long i2, long comp_nn )
 {
 	long	i ;
 	double	dx1, dx2, dx ;
@@ -419,10 +438,7 @@ bool TMakeZQData_1::like_NextSegData2( long i1, long i2, long comp_nn, double ma
 		dx2 += m_SegData[i+i2].xx-m_SegData[i+i2-1].xx ;
 	}
 	dx = fabs(dx2-dx1)/comp_nn ;
-	if ( dx<=max_dx )
-		return ( true ) ;
-	else
-		return ( false ) ;
+	return ( dx ) ;
 }
 //////////////////////////////////////////////////////////////////////
 void TMakeZQData_1::push_NextSegData2( long i, long next_ii )
@@ -440,17 +456,27 @@ void TMakeZQData_1::push_NextSegData2( long i, long next_ii )
 long TMakeZQData_1::set_NextSegData2( long i, long comp_nn, double max_dx, long max_dyTot )
 {
 	long	ii, dy_tot ;
+	double	dx ;
 	for ( ii=i+comp_nn; ii<m_SegData_m-comp_nn; ii++ )
 	{
-		if ( like_NextSegData2( i, ii, comp_nn, max_dx ) )
+		dx = like_NextSegData2( i, ii, comp_nn ) ;
+//log_prt( g_logFile, "set_NextSegData2 i=%-8ld ii=%-8ld dx=%1.2lf max_dx=%1.2lf\r\n", i, ii, dx, max_dx ) ;
+		if ( dx<=max_dx )
 		{
-			dy_tot = get_DyTotFromSegData2( i, ii, comp_nn ) ;
+			dy_tot = get_DyTotFromSegData22( i, ii, comp_nn ) ;
+//log_prt( g_logFile, "set_NextSegData2 i=%-8ld ii=%-8ld dx=%1.2lf max_dx=%1.2lf dy_tot=%-8ld max_dyTot=%-8ld\r\n", i, ii, dx, max_dx, dy_tot, max_dyTot ) ;
 			if ( dy_tot<=max_dyTot )
 			{
+log_prt( g_logFile, "push_NextSegData2 i=%-8ld ii=%-8ld di=%-5ld zq_xx=%-10.2lf dx=%-10.2lf max_dx=%-10.2lf dy_tot=%-8ld max_dyTot=%-8ld\r\n", 
+																				i, ii, ii-i, 
+																				m_SegData[ii].xx-m_SegData[i].xx,
+																				dx, max_dx, dy_tot, max_dyTot ) ;
 				push_NextSegData2( i, ii ) ;
 				return (ii) ;
 			}
 		}
+		if ( ii>i+50 )
+			break ;
 	}
 	return ( -1 ) ;
 }
@@ -467,7 +493,7 @@ void TMakeZQData_1::make_next_data2( long comp_nn, double max_dx, long max_dyTot
 		if ( f<0 )
 		{
 			m ++ ;
-			if ( m>3 )
+			if ( m>300 )
 				break ;
 		}
 		else
@@ -570,15 +596,14 @@ void TMakeZQData_1::set_all_next_ff()
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
-void TMakeZQData_1::show_seg_data( long di, long y_off, long show_color, long show_yy )
+void TMakeZQData_1::show_seg_data( long di, long y_off, long show_color, long SegYY_color, long next_color )
 {
-	long	i, ix, next_ii, next_color ;
+	long	i, ix, next_ii ;
 	long	x, y ;
 	double	xx, dx ;
 	char	ss[50] ;
 
 	m_LineMode = PS_SOLID ;
-	next_color = RGB(30,30,30) ;
 	for ( i=0; i<m_SegData_m; i++ )
 	{
 		if ( i==0 )
@@ -593,27 +618,30 @@ void TMakeZQData_1::show_seg_data( long di, long y_off, long show_color, long sh
 		else
 			draw_VLine( xx, 0, -32000, di, -(y_off+10), show_color, ss ) ;
 
-		if ( show_yy>0 )
+		if ( SegYY_color>0 )
 		{
 			if ( i<m_SegData_m )
-				show_SegYY( i, RGB(20,80,20) ) ;
+				show_SegYY( i, SegYY_color ) ;
 		}
-		if ( i<m_SegData_m-1 )
+		if ( next_color>0 )
 		{
-			next_ii = m_SegData[i].next_ii[0] ;
-			if ( next_ii>0 )
+			if ( i<m_SegData_m-1 )
 			{
-				sprintf( ss, "%ld-%ld-%1.1lf", i, next_ii, m_SegData[next_ii].xx-xx ) ;
-				if ( ( i % 2 )==0 )
-					x = draw_VLine( xx, 0, -32000, di, -(y_off+20), show_color+next_color, ss ) ;
-				else
-					x = draw_VLine( xx, 0, -32000, di, -(y_off+35), show_color+next_color, ss ) ;
-
-				if ( m_SegData[i].next_ff[0]>1000 )
+				next_ii = m_SegData[i].next_ii[0] ;
+				if ( next_ii>0 )
 				{
-					sprintf( ss, "%ld-%ld", m_SegData[i].next_ff[0], m_SegData[i].next_nn[0] ) ;
-					y = get_waveForm_y( -32000, g_waveForm_bb / 2 ) ;
-					do_DrawText( ss, x, y, RGB(80,10,10), g_waveForm_backColor, 10, -60 ) ;
+					sprintf( ss, "%ld-%ld-%1.1lf", i, next_ii, m_SegData[next_ii].xx-xx ) ;
+					if ( ( i % 2 )==0 )
+						x = draw_VLine( xx, 0, -32000, di, -(y_off+20), next_color, ss ) ;
+					else
+						x = draw_VLine( xx, 0, -32000, di, -(y_off+35), next_color, ss ) ;
+
+					if ( m_SegData[i].next_ff[0]>1000 )
+					{
+						sprintf( ss, "%ld-%ld", m_SegData[i].next_ff[0], m_SegData[i].next_nn[0] ) ;
+						y = get_waveForm_y( -32000, g_waveForm_bb / 2 ) ;
+						do_DrawText( ss, x, y, next_color, g_waveForm_backColor, 10, -60 ) ;
+					}
 				}
 			}
 		}
@@ -695,15 +723,19 @@ void TMakeZQData_1::make_tj_data( TJDataProc *aTJProc, long idx, char *tjName )
 	make_TJData2( aTJProc, 0, tjName ) ;
 	log_prt( g_logFile, "make_TJData2==================\r\n" ) ;
 
+	aTJProc->sort_tj_data( 0 ) ;
+	aTJProc->reverse_tj_data( 0 ) ;
 	aTJProc->print_tj_data( 0, "original" ) ;
 
 	aTJProc->group_tj_data( 0 ) ;
-	aTJProc->print_tj_data( 0, "group" ) ;
+	aTJProc->print_tj_data( 0, "group-1" ) ;
+
+	aTJProc->group_tj_data( 0 ) ;
+	aTJProc->print_tj_data( 0, "group-2" ) ;
 
 	aTJProc->remove_some_tj_data( 0 ) ;
-
 	aTJProc->sort_tj_data( 0 ) ;
-	aTJProc->print_tj_data( 0, "sort-1" ) ;
+//	aTJProc->print_tj_data( 0, "sort-1" ) ;
 
 	aTJProc->reverse_tj_data( 0 ) ;
 	aTJProc->print_tj_data( 0, "reverse-1" ) ;
@@ -749,7 +781,7 @@ long TMakeZQData_1::make_TJData2Ex( TJDataProc *aTJProc, long idx, long nn )
 			next_ff = m_SegData[i].next_ff[0] ;
 		}
 	}
-log_prt( g_logFile, "make_TJData2==================nn=%ld max_nn=%ld next_ff=%ld\r\n", nn, max_nn, next_ff ) ;
+log_prt( g_logFile, "make_TJData2==================nn=%-8ld max_nn=%-8ld next_ff=%-8ld\r\n", nn, max_nn, next_ff ) ;
 	if ( next_ff>=0 )
 	{
 		if ( nn>0 && max_nn<nn )
@@ -769,7 +801,7 @@ log_prt( g_logFile, "make_TJData2==================nn=%ld max_nn=%ld next_ff=%ld
 				next_ii = m_SegData[i].next_ii[0] ;
 				zq_dx = m_SegData[i+1].xx-m_SegData[i].xx ;
 				zq_val = m_SegData[next_ii].xx-m_SegData[i].xx ;
-log_prt( g_logFile, "i=%ld next_ii=%ld zq_dx=%1.1lf zq_val=%1.1lf\r\n", i, next_ii, zq_dx, zq_val ) ;
+log_prt( g_logFile, "make_TJData2----i=%-8ld next_ii=%-8ld di=%-5ld zq_dx=%-11.1lf zq_val=%-11.1lf\r\n", i, next_ii, next_ii-i, zq_dx, zq_val ) ;
 				aTJProc->push_tj_data( idx, zq_dx, zq_val ) ;
 			}
 		}
@@ -860,37 +892,44 @@ void TMakeZQData_1::clear_next_data()
 	}
 }
 //////////////////////////////////////////////////////////////////////
+long TMakeZQData_1::get_PreIndex_NextSegData3( long i0, double zq_len, double max_dx )
+{
+	long	i, i1 ;
+	for ( i=i0+1; i<m_SegData_m; i++ )
+	{
+		i1 = get_Index_NextSegData3( i, zq_len, max_dx ) ;
+		if ( i1>i )
+			break ;
+	}
+	return ( i ) ;
+}
+//////////////////////////////////////////////////////////////////////
 long TMakeZQData_1::make_next_data3( double zq_len, double max_dx, long max_dyTot )
 {
 	long	ff, i0, i1, i2, dy_tot ;
 
 	clear_next_data() ;
 	m_next_nn = 1 ;
-	i0 = -1 ;
-	i1 = -1 ;
-	while ( i1<0 )
-	{
-		i0 ++ ;
-		i1 = get_Index_NextSegData3( i0, zq_len, max_dx ) ;
-	}
+
+	i0 = get_PreIndex_NextSegData3( 0, zq_len, max_dx ) ;
+	i1 = get_Index_NextSegData3( i0, zq_len, max_dx ) ;
+
 	ff = 0 ;
 	while ( i1>0 )
 	{
 		i2 = get_Index_NextSegData3( i1, zq_len, max_dx ) ;
 		if ( i2<0 )
 		{
-			if ( m_next_nn>1 )
-				break ;
-			else
-			{
-				i0++ ;
-				i1 = get_Index_NextSegData3( i0, zq_len, max_dx ) ;
-			}
+log_prt( g_logFile, "break---------------------i0=%-8ld i1=%-8ld\r\n", i0, i1 ) ;
+			i0 = get_PreIndex_NextSegData3( i0, zq_len, max_dx ) ;
+			i1 = get_Index_NextSegData3( i0, zq_len, max_dx ) ;
+			m_next_nn = 1 ;
+			continue ;
 		}
 		else 
 		{
 			dy_tot = get_DyTotFromSegData3( i0, i1, i2 ) ;
-log_prt( g_logFile, "make_next_data3 i0=%-5ld i1=%-5ld i2=%-5ld dy_tot=%-5ld max_dyTot=%-5ld\r\n", i0, i1, i2, dy_tot, max_dyTot ) ;
+log_prt( g_logFile, "make_next_data3 i0=%-8ld i1=%-8ld i2=%-8ld dy_tot=%-8ld max_dyTot=%-8ld\r\n", i0, i1, i2, dy_tot, max_dyTot ) ;
 			if ( dy_tot<=max_dyTot )
 			{
 				if ( ff==0 )
@@ -900,11 +939,11 @@ log_prt( g_logFile, "make_next_data3 i0=%-5ld i1=%-5ld i2=%-5ld dy_tot=%-5ld max
 				}
 				push_NextSegData3( i1, i2 ) ;
 			}
-			else
-				break ;
 			i0 = i1 ;
 			i1 = i2 ;
 		}
+		if ( i1+i1-i0>=m_SegData_m )
+			break ;
 	}
 	if ( m_SegData_m-i1<=i1-i0 )
 		return ( i1-i0 );

@@ -120,7 +120,7 @@ void	TJDataProc::print_tjData( long idx, char print_name[] )
 	zq_len = 0 ;
 	for ( i=0; i<m_TJ[idx].tjData_m; i++ )
 	{
-		log_prt( g_logFile, "i=%-5ld dx=%-8.3lf val=%-8.3lf tot=%-5ld sum=%-8.3lf avg=%-8.1lf\r\n",
+		log_prt( g_logFile, "i=%-8ld dx=%-11.3lf val=%-11.3lf tot=%-8ld sum=%-11.3lf avg=%-11.1lf\r\n",
 						i, 
 						tj_data[i].zq_dx,
 						tj_data[i].zq_val,
@@ -130,12 +130,6 @@ void	TJDataProc::print_tjData( long idx, char print_name[] )
 		zq_len += tj_data[i].zq_val*tj_data[i].zq_tot ;
 	}
 	m_TJ[idx].zq_len = zq_len ;
-	log_prt( g_logFile, "==============pcm_si=%ld pcm_ei=%ld pcm_len=%ld zq_len=%1.1lf\r\n", 
-										m_TJ[idx].pcm_si,
-										m_TJ[idx].pcm_ei,
-										m_TJ[idx].pcm_len,
-										m_TJ[idx].zq_len ) ;
-
 }
 //////////////////////////////////////////////////////////////////////
 void	TJDataProc::print_tj_data( long idx, char print_name[] )
@@ -278,10 +272,12 @@ void TJDataProc::group_tj_data( long idx )
 		{
 			if ( tj_data[k].zq_tot<=0 )
 				continue ;
-			if ( fabs( zq_val-tj_data[k].zq_val )<3 )
+			if ( fabs( zq_val-tj_data[k].zq_val )<=3 )
 			{
 				tj_data[i].zq_sum += tj_data[k].zq_sum ;
 				tj_data[i].zq_tot += tj_data[k].zq_tot ;
+				tj_data[i].zq_val = tj_data[i].zq_sum/tj_data[i].zq_tot ;
+				zq_val  = tj_data[i].zq_val ;
 				tj_data[k].zq_tot = 0 ;
 				tj_data[k].zq_sum = 0 ;
 			}	

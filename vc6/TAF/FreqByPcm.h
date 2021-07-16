@@ -23,10 +23,11 @@ class TFreqByPcm
 {
 private:
 
-	double				m_dx ;
-
 	double	m_MinVV ;
 	long	m_DC_line_color ;
+
+	short	*m_PcmData ;
+	long	m_PcmData_mm, m_PcmData_nn ;
 
 
 /**

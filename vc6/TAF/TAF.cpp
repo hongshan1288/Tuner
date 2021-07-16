@@ -6,6 +6,7 @@
 #include "AudioProc.h"
 #include "ComUtils.h"
 #include "FreqByPcm.h"
+#include "TWavePeriod.h"
 
 //#define from_proc_prt	log_printf_ex
 #define from_proc_prt	//
@@ -6416,15 +6417,18 @@ void do_new_show_vars_proc()
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 TFreqByPcm	*g_fbp ;
+TWavePeriod	*g_wp ;
 //////////////////////////////////////////////////////////////////////
 void init_fbp()
 {
 	g_fbp = new TFreqByPcm ;
+	g_wp = new TWavePeriod ;
 }
 //////////////////////////////////////////////////////////////////////
 long do_test_wave_proc( char *wav_file )
 {
 	long	nSize, nOff, ff ;
+	double	period_ff ;
 	short	*pcm_data ;
 
 	nOff = 44 ;
@@ -6437,9 +6441,11 @@ long do_test_wave_proc( char *wav_file )
 	__try
 	{
 		ReadBufFromFile( wav_file, pcm_data, nOff, nSize ) ;
-		ff = g_fbp->GetFreqFromPcm( (short*)pcm_data, nSize/2, "do_test_wave_proc" ) ;
-		if ( ff<=0 )
-			ff = 0 ;
+//		ff = g_fbp->GetFreqFromPcm( (short*)pcm_data, nSize/2, "do_test_wave_proc" ) ;
+		g_wp->clear_period_data() ;
+		period_ff = g_wp->make_period_data( (short*)pcm_data, nSize/2 ) ;
+		if ( period_ff<=0 )
+			period_ff = 0 ;
 	}
 	__finally
 	{
