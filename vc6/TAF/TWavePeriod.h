@@ -19,7 +19,7 @@ struct	PeriodYY_Type
 struct	PeriodDa_Type
 {
 	double	xx ;
-	short	ff ;
+	short	ff, vv ;
 	long	ix ;
 	long	PeriodYY_si ;
 	long	PeriodYY_nn ;
@@ -62,8 +62,7 @@ private:
 
 	// PeriodDa
 	PeriodDa_Type	*m_PeriodDa ;
-	long		m_PeriodDa_m, m_PeriodDa_n ;
-	long		m_PeriodDa_si ;
+	long		m_PeriodDa_si, m_PeriodDa_mm, m_PeriodDa_nn ;
 
 	void	set_PeriodDa_Len( long nn ) ;
 	long	push_PeriodDa( short ff, long ix, double xx ) ;
@@ -104,6 +103,7 @@ private:
 	void set_all_next_ff() ;
 	void set_all_next_ff_ex( long next_ff, long val ) ;
 
+	void reset_si_vars() ;
 
 
 	// TJData
@@ -134,7 +134,7 @@ private:
 	void make_TJData() ;
 
 	void clear_tj_data() ;
-	void make_tj_data() ;
+	void make_tj_data( long show_flag ) ;
 	void print_tj_data( char print_name[] ) ;
 
 
@@ -148,6 +148,8 @@ private:
 	long get_Idx_by_zq( long i, double zq_val, double max_dx ) ;
 	long get_PreIdx_by_zq( long i0, double zq_len, double max_dx ) ;
 
+	void show_pcm_data( short *pcm_data, long pcm_len, long show_color, long dot_color ) ;
+
 	
 public:
 
@@ -155,9 +157,9 @@ public:
 	virtual ~TWavePeriod();
 
 	void clear_period_data() ;
-	double make_period_data(short *pcm_data, long pcm_len) ;
+	double make_period_data(short *pcm_data, long pcm_len, long show_flag ) ;
 
-	void show_pcm_data( short *pcm_data, long pcm_len, long show_color, long dot_color ) ;
+	void show_period_data() ;
 
 };
 //////////////////////////////////////////////////////////////////////

@@ -21,8 +21,8 @@ TWavePeriod::TWavePeriod()
 	m_PeriodYY_n = 0 ;
 	set_PeriodYY_Len( 1000 ) ;
 
-	m_PeriodDa_m = 0 ;
-	m_PeriodDa_n = 0 ;
+	m_PeriodDa_mm = 0 ;
+	m_PeriodDa_nn = 0 ;
 	set_PeriodDa_Len( 100 ) ;
 
 	m_PcmData_nn = 30 * 44100 ; // 30秒单声道的缓冲区
@@ -86,7 +86,7 @@ void TWavePeriod::make_PeriodYY()
 	double	xx_tot, xx, x0, dx ;
 
 	dx = 1 ;
-	for ( i=0; i<m_PeriodDa_m-1; i++ )
+	for ( i=m_PeriodDa_si; i<m_PeriodDa_mm-1; i++ )
 	{
 		push_PeriodYY( 0, 0 ) ; //原点肯定是0
 		m_PeriodDa[i].PeriodYY_si = m_PeriodYY_m ;
@@ -127,13 +127,13 @@ void TWavePeriod::set_PeriodDa_Len( long nn )
 {
 	PeriodDa_Type	*pd ;
 	pd = (PeriodDa_Type*)GlobalAlloc( GPTR, (nn)*sizeof(PeriodDa_Type) ) ;
-	if ( m_PeriodDa_n>0 && m_PeriodDa != NULL ) 
+	if ( m_PeriodDa_nn>0 && m_PeriodDa != NULL ) 
 	{
-		CopyMemory( pd, m_PeriodDa, m_PeriodDa_n*sizeof(PeriodDa_Type) ) ;
+		CopyMemory( pd, m_PeriodDa, m_PeriodDa_nn*sizeof(PeriodDa_Type) ) ;
 		FreeBuf( m_PeriodDa ) ;
 	}
 	m_PeriodDa = pd ;
-	m_PeriodDa_n = nn ;
+	m_PeriodDa_nn = nn ;
 }
 //////////////////////////////////////////////////////////////////////
 long TWavePeriod::push_PeriodDa( short ff, long ix, double xx )
@@ -142,7 +142,7 @@ long TWavePeriod::push_PeriodDa( short ff, long ix, double xx )
 	PeriodDa_Type	*pd ;
 
 	pd = m_PeriodDa ;
-	pd += m_PeriodDa_m++ ;
+	pd += m_PeriodDa_mm ;
 
 	pd->xx = xx ;
 	pd->ix = ix ;
@@ -151,10 +151,16 @@ long TWavePeriod::push_PeriodDa( short ff, long ix, double xx )
 	pd->next_ff = 0 ;
 	pd->next_nn = 0 ;
 
-	if ( m_PeriodDa_m>=m_PeriodDa_n )
-		set_PeriodDa_Len( m_PeriodDa_n+100 ) ;
+	if ( m_PeriodDa_mm==m_PeriodDa_si )
+		pd->vv = 100 ;
+	else
+		pd->vv = 0 ;
+	m_PeriodDa_mm++ ;
 
-	return ( m_PeriodDa_m-1 ) ;
+	if ( m_PeriodDa_mm>=m_PeriodDa_nn )
+		set_PeriodDa_Len( m_PeriodDa_nn+100 ) ;
+
+	return ( m_PeriodDa_mm-1 ) ;
 
 }
 //////////////////////////////////////////////////////////////////////
@@ -252,7 +258,7 @@ void TWavePeriod::make_PeriodData()
 	for ( i=m_PcmData_si; i<m_PcmData_mm; i++ )
 	{
 		yy = m_PcmData[i];
-		if ( m_PeriodDa_m==0 )
+		if ( m_PeriodDa_mm==m_PeriodDa_si )
 		{
 			if ( y0<0 && yy>=0 ) // 第一个点一定是从负值到正值（包括0）
 			{
@@ -295,26 +301,26 @@ void TWavePeriod::remove_ShortPeriodData( double min_dx )
 	// 1. 计算dx的平均值
 	dx_avg = 0 ;
 	dx_max = 0 ;
-	for ( i=m_PeriodDa_si+1; i<m_PeriodDa_m; i++ )
+	for ( i=m_PeriodDa_si+1; i<m_PeriodDa_mm; i++ )
 	{
 		dx = m_PeriodDa[i].xx-m_PeriodDa[i-1].xx ;
 		if ( dx_max<dx )
 			dx_max = dx ;
 		dx_avg += dx ;
 	}
-	dx_avg /= (m_PeriodDa_m-m_PeriodDa_si) ;
+	dx_avg /= (m_PeriodDa_mm-m_PeriodDa_si) ;
 	dx_avg *= min_dx ;
 
-	// 2. 去除小于平均值百分比（0.2）的点
+	// 2. 去除小于平均值百分比（1-0.618）或小于最大值一半的点
 	ii = m_PeriodDa_si ;
-	for ( i=m_PeriodDa_si+1; i<m_PeriodDa_m;)
+	for ( i=m_PeriodDa_si+1; i<m_PeriodDa_mm;)
 	{
 		dx = m_PeriodDa[i].xx-m_PeriodDa[ii].xx ;
 		if ( dx<dx_avg || dx<dx_max/2 )
 		{
-			nn = m_PeriodDa_m-i ;
+			nn = m_PeriodDa_mm-i ;
 			CopyMemory( &m_PeriodDa[i], &m_PeriodDa[i+1], nn*sizeof(PeriodDa_Type) ) ;
-			m_PeriodDa_m -- ;
+			m_PeriodDa_mm -- ;
 		}
 		else
 		{
@@ -332,28 +338,37 @@ void TWavePeriod::show_PeriodData( long di, long y_off, long show_color, long yy
 	char	ss[50] ;
 
 	m_LineMode = PS_SOLID ;
-	for ( i=0; i<m_PeriodDa_m; i++ )
+	for ( i=0; i<m_PeriodDa_mm; i++ )
 	{
 		if ( i==0 )
 			dx = 0 ;
 		else
 			dx = m_PeriodDa[i].xx-m_PeriodDa[i-1].xx ;
+
 		xx = m_PeriodDa[i].xx ;
 		ix = m_PeriodDa[i].ix ;
+
 		sprintf( ss, "%ld-%ld-%1.1lf", i, ix, dx ) ;
 		if ( ( i % 2 )==0 )
-			draw_VLine( xx, 0, -32000, di, -y_off, show_color, ss ) ;
+			x = draw_VLine( xx, 0, -32000, di, -y_off, show_color, ss ) ;
 		else
-			draw_VLine( xx, 0, -32000, di, -(y_off+10), show_color, ss ) ;
+			x = draw_VLine( xx, 0, -32000, di, -(y_off+10), show_color, ss ) ;
+
+		if ( m_PeriodDa[i].vv>0 )
+		{
+			sprintf( ss, "***" ) ;
+			y = get_waveForm_y( 0, g_waveForm_bb / 2 ) ;
+			do_DrawText( ss, x, y, RGB(100,10,10), g_waveForm_backColor, 10, -10 ) ;
+		}
 
 		if ( yy_color>0 )
 		{
-			if ( i<m_PeriodDa_m )
+			if ( i<m_PeriodDa_mm )
 				show_PeriodYY( i, yy_color ) ;
 		}
 		if ( next_color>0 )
 		{
-			if ( i<m_PeriodDa_m-1 )
+			if ( i<m_PeriodDa_mm-1 )
 			{
 				next_ii = m_PeriodDa[i].next_ii ;
 				if ( next_ii>0 )
@@ -589,7 +604,7 @@ long TWavePeriod::set_NextPeriodData( long i, long comp_nn, double max_dx, long 
 {
 	long	ii, dy_tot ;
 	double	dx ;
-	for ( ii=i+comp_nn; ii<m_PeriodDa_m-comp_nn; ii++ )
+	for ( ii=i+comp_nn; ii<m_PeriodDa_mm-comp_nn; ii++ )
 	{
 		dx = like_NextPeriodData( i, ii, comp_nn ) ;
 //log_prt( g_logFile, "set_NextSegData2 i=%-8ld ii=%-8ld dx=%1.2lf max_dx=%1.2lf\r\n", i, ii, dx, max_dx ) ;
@@ -619,7 +634,7 @@ void TWavePeriod::make_next_data( long comp_nn, double max_dx, long max_dyTot )
 
 	m_next_si = -1 ;
 	m = 0 ;
-	for ( i=comp_nn; i<m_PeriodDa_m-comp_nn; i++ )
+	for ( i=comp_nn; i<m_PeriodDa_mm-comp_nn; i++ )
 	{
 		f = set_NextPeriodData( i, comp_nn, max_dx, max_dyTot ) ;
 		if ( f<0 )
@@ -642,7 +657,7 @@ void TWavePeriod::push_next_ff( long si, long next_ii )
 	double	dx_val, dx ;
 
 	dx_val = m_PeriodDa[next_ii].xx-m_PeriodDa[si].xx ;
-	for ( i=si; i<m_PeriodDa_m; )
+	for ( i=si; i<m_PeriodDa_mm; )
 	{
 		next_ii = m_PeriodDa[i].next_ii ;
 		dx = m_PeriodDa[next_ii].xx-m_PeriodDa[i].xx ;
@@ -664,7 +679,7 @@ void TWavePeriod::make_next_ff()
 	{
 		if ( m_PeriodDa[i].next_ff>0 )
 			continue ;
-		if ( i<m_PeriodDa_m-1 )
+		if ( i<m_PeriodDa_mm-1 )
 		{
 			next_ii = m_PeriodDa[i].next_ii ;
 			if ( next_ii>0 )
@@ -702,7 +717,7 @@ void TWavePeriod::set_all_next_ff()
 			{
 				next_ff = m_PeriodDa[i].next_ff ;
 				k = m_PeriodDa[i].next_ii ;
-				for ( ; k<m_PeriodDa_m; )
+				for ( ; k<m_PeriodDa_mm; )
 				{
 					if ( m_PeriodDa[k].next_ff==0 )
 					{
@@ -737,30 +752,64 @@ void TWavePeriod::clear_period_data()
 
 	m_PeriodYY_m = 0 ;
 
-	m_PeriodDa_m = 0 ;
+	m_PeriodDa_mm = 0 ;
 	m_PeriodDa_si = 0 ;
 
 }
 //////////////////////////////////////////////////////////////////////
-double TWavePeriod::make_period_data(short *pcm_data, long pcm_len)
+void TWavePeriod::reset_si_vars()
+{
+	long	i, ix ;
+	for ( i=m_PeriodDa_mm-1; i>=0; i-- )
+	{
+		if ( m_PeriodDa[i].next_ff<1000 )
+			continue ;
+		ix = m_PeriodDa[i].ix ;
+		if ( m_PcmData[ix]<0 && m_PcmData[ix+1]>=0 )
+			break ;
+	}
+	m_PcmData_si = ix ;
+	m_PeriodDa_si = m_PeriodDa_mm = i ;
+}
+//////////////////////////////////////////////////////////////////////
+double TWavePeriod::make_period_data(short *pcm_data, long pcm_len, long show_flag )
 {
 
 	push_PcmData( pcm_data, pcm_len ) ;
-	show_pcm_data( m_PcmData, m_PcmData_mm, RGB(10,50,10), RGB(20,80,20) ) ;
+	if ( show_flag>0 )
+		show_pcm_data( m_PcmData, m_PcmData_mm, RGB(10,50,10), RGB(20,80,20) ) ;
+
+log_prt( g_logFile, "make_period_data========================================================================m_PcmData_si=%-8ld m_PcmData_mm=%-8ld m_PeriodDa_si=%-8ld  m_PeriodDa_mm=%-8ld\r\n", m_PcmData_si, m_PcmData_mm, m_PeriodDa_si, m_PeriodDa_mm ) ;
 
 	make_PeriodData() ;
-	show_PeriodData( 0, 5, RGB(80,0,50), 0, 0 ) ;
+	if ( show_flag>0 )
+		show_PeriodData( 0, 5, RGB(80,0,50), 0, 0 ) ;
+
 	remove_ShortPeriodData( 1-0.618 ) ; // remove too short Period data
+
 	make_PeriodYY() ;
 
 	make_next_data(1, 1, 5) ;
 
+	if ( show_flag>0 )
+		show_PeriodData( 0, 5, RGB(20,50,20), 0, RGB(100,10,10) ) ;
+
+	make_tj_data(show_flag) ;
+
+	reset_si_vars() ;
+
+	if ( m_TJDa_m==1 ) 
+		return ( m_TJDa[0].zq_val ) ;
+	else
+		return ( 0 ) ;
+
+}
+//////////////////////////////////////////////////////////////////////
+void TWavePeriod::show_period_data()
+{
+	show_pcm_data( m_PcmData, m_PcmData_mm, RGB(10,50,10), RGB(20,80,20) ) ;
 	show_PeriodData( 0, 5, RGB(20,50,20), RGB(0,30,0), RGB(100,10,10) ) ;
-
-	make_tj_data() ;
-
-	return ( 0 ) ;
-
+	print_tj_data( "finished" ) ;
 }
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
@@ -987,7 +1036,7 @@ long TWavePeriod::make_TJDataEx( long nn )
 			next_ff = m_PeriodDa[i].next_ff ;
 		}
 	}
-log_prt( g_logFile, "make_TJData2==================nn=%-8ld max_nn=%-8ld next_ff=%-8ld\r\n", nn, max_nn, next_ff ) ;
+//log_prt( g_logFile, "make_TJData2==================nn=%-8ld max_nn=%-8ld next_ff=%-8ld\r\n", nn, max_nn, next_ff ) ;
 	if ( next_ff>=0 )
 	{
 		if ( nn>0 && max_nn<nn )
@@ -1007,7 +1056,7 @@ log_prt( g_logFile, "make_TJData2==================nn=%-8ld max_nn=%-8ld next_ff
 				next_ii = m_PeriodDa[i].next_ii ;
 				zq_dx = m_PeriodDa[i+1].xx-m_PeriodDa[i].xx ;
 				zq_val = m_PeriodDa[next_ii].xx-m_PeriodDa[i].xx ;
-log_prt( g_logFile, "make_TJData2----i=%-8ld next_ii=%-8ld di=%-5ld zq_dx=%-11.1lf zq_val=%-11.1lf\r\n", i, next_ii, next_ii-i, zq_dx, zq_val ) ;
+//log_prt( g_logFile, "make_TJData2----i=%-8ld next_ii=%-8ld di=%-5ld zq_dx=%-11.1lf zq_val=%-11.1lf\r\n", i, next_ii, next_ii-i, zq_dx, zq_val ) ;
 				push_tj_data( zq_dx, zq_val ) ;
 			}
 		}
@@ -1042,30 +1091,36 @@ void TWavePeriod::make_TJData()
 	avg_tj_data() ;
 }
 //////////////////////////////////////////////////////////////////////
-void TWavePeriod::make_tj_data()
+void TWavePeriod::make_tj_data( long show_flag )
 {
 
-	log_prt( g_logFile, "make_tj_data========================================================================%s\r\n", g_wavFile ) ;
+	if ( show_flag>0 )
+		log_prt( g_logFile, "make_tj_data========================================================================%s\r\n", g_wavFile ) ;
 
 	make_TJData() ;
-	log_prt( g_logFile, "make_TJData2==================\r\n" ) ;
+
+	if ( show_flag>0 )
+		log_prt( g_logFile, "make_TJData2==================\r\n" ) ;
 
 	sort_tj_data() ;
 	reverse_tj_data() ;
-	print_tj_data( "original" ) ;
+	if ( show_flag>0 )
+		print_tj_data( "original" ) ;
 
 	group_tj_data() ;
-	print_tj_data("group-1" ) ;
+	if ( show_flag>0 )
+		print_tj_data("group-1" ) ;
 
 	group_tj_data() ;
-	print_tj_data("group-2" ) ;
+	if ( show_flag>0 )
+		print_tj_data("group-2" ) ;
 
 	remove_some_tj_data() ;
 	sort_tj_data() ;
-//	print_tj_data( "sort-1" ) ;
 
 	reverse_tj_data() ;
-	print_tj_data( "reverse-1" ) ;
+	if ( show_flag>0 )
+		print_tj_data( "reverse-1" ) ;
 
 }
 /////////////////////////////////////////////////////////////////////////////
@@ -1172,7 +1227,7 @@ double TWavePeriod::get_max_zq_val()
 void TWavePeriod::clear_next_data()
 {
 	long	i ;
-	for ( i=0; i<m_PeriodDa_m; i++ )
+	for ( i=0; i<m_PeriodDa_mm; i++ )
 	{
 		m_PeriodDa[i].next_ii = 0;
 		m_PeriodDa[i].next_ff = 0;
@@ -1220,7 +1275,7 @@ long TWavePeriod::get_Idx_by_zq( long i, double zq_val, double max_dx )
 	double	xx, dx ;
 
 	xx = m_PeriodDa[i].xx ;
-	for ( ii=i+1; ii<m_PeriodDa_m; ii++ )
+	for ( ii=i+1; ii<m_PeriodDa_mm; ii++ )
 	{
 		dx = m_PeriodDa[ii].xx-xx ;
 		if ( fabs(dx-zq_val)<max_dx )
@@ -1232,7 +1287,7 @@ long TWavePeriod::get_Idx_by_zq( long i, double zq_val, double max_dx )
 long TWavePeriod::get_PreIdx_by_zq( long i0, double zq_len, double max_dx )
 {
 	long	i, i1 ;
-	for ( i=i0+1; i<m_PeriodDa_m; i++ )
+	for ( i=i0+1; i<m_PeriodDa_mm; i++ )
 	{
 		i1 = get_Idx_by_zq( i, zq_len, max_dx ) ;
 		if ( i1>i )
@@ -1246,6 +1301,7 @@ long TWavePeriod::make_next_data_by_zq( double zq_len, double max_dx, long max_d
 	long	ff, i0, i1, i2, dy_tot ;
 
 	clear_next_data() ;
+
 	m_next_nn = 1 ;
 
 	i0 = get_PreIdx_by_zq( 0, zq_len, max_dx ) ;
@@ -1279,10 +1335,10 @@ log_prt( g_logFile, "make_next_data3 i0=%-8ld i1=%-8ld i2=%-8ld dy_tot=%-8ld max
 			i0 = i1 ;
 			i1 = i2 ;
 		}
-		if ( i1+i1-i0>=m_PeriodDa_m )
+		if ( i1+i1-i0>=m_PeriodDa_mm )
 			break ;
 	}
-	if ( m_PeriodDa_m-i1<=i1-i0 )
+	if ( m_PeriodDa_mm-i1<=i1-i0 )
 		return ( i1-i0 );
 	else
 		return ( -1 ) ;

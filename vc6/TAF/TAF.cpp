@@ -191,9 +191,6 @@ struct	ZMZ_DATA
 	double	first_vv ;
 
 
-
-
-
 } ;
 
 struct	FREQ_DATA
@@ -6425,27 +6422,62 @@ void init_fbp()
 	g_wp = new TWavePeriod ;
 }
 //////////////////////////////////////////////////////////////////////
+void SaveToBmpFile( char *waveFile, long nCount )
+{
+	char	bmpFile[500] ;
+	sprintf( bmpFile, "%s-%ld.bmp", waveFile, nCount ) ;
+	DeleteFile( bmpFile ) ;
+	SaveBMPFile24( bmpFile, g_waveForm_aa, g_waveForm_bb, g_waveForm_pan_dc_buf ) ;
+	PopEvent( 5001, (long)bmpFile, "make_freq_from_pcm_data()" ) ;
+}
+//////////////////////////////////////////////////////////////////////
 long do_test_wave_proc( char *wav_file )
 {
-	long	nSize, nOff, ff ;
+	long	nRead, nBytes, nSize, nOff, nCount ;
+	long	show_flag ;
 	double	period_ff ;
 	short	*pcm_data ;
 
 	nOff = 44 ;
 	nSize = Get_FileSize( wav_file ) ;
-
 	strcpy( g_wavFile, wav_file ) ;
 
 	nSize -= nOff ;
-	pcm_data = (short*)GlobalAlloc( GPTR, nSize ) ;
+
+	nBytes = 8820 ;
+
+	pcm_data = (short*)GlobalAlloc( GPTR, nBytes ) ;
+	g_wp->clear_period_data() ;
 	__try
 	{
-		ReadBufFromFile( wav_file, pcm_data, nOff, nSize ) ;
-//		ff = g_fbp->GetFreqFromPcm( (short*)pcm_data, nSize/2, "do_test_wave_proc" ) ;
-		g_wp->clear_period_data() ;
-		period_ff = g_wp->make_period_data( (short*)pcm_data, nSize/2 ) ;
-		if ( period_ff<=0 )
-			period_ff = 0 ;
+		nCount = 0 ;
+		show_flag = 0 ;
+		while ( nSize>0 )
+		{
+			nRead = ReadBufFromFile( wav_file, pcm_data, nOff, nBytes ) ;
+			if ( nRead>0 ) 
+			{
+				if ( show_flag>0 )
+					clear_waveForm_area() ;
+				period_ff = g_wp->make_period_data( (short*)pcm_data, nRead/2, 0 ) ;
+				if ( show_flag>0 )
+					SaveToBmpFile( wav_file, nCount ) ;
+//Sleep( 200 ) ;
+				if ( period_ff<=0 )
+					period_ff = 0 ;
+			}
+			nOff += nRead ;
+			nSize -= nRead ;
+			nCount ++ ;
+			if ( nCount>11 )
+				break ;
+		}
+		if ( show_flag==0 )
+		{
+			clear_waveForm_area() ;
+			g_wp->show_period_data() ;
+			SaveToBmpFile( wav_file, nCount ) ;
+		}
 	}
 	__finally
 	{
@@ -6465,17 +6497,7 @@ long test_proc( char *DataValue )
 		g_fbp->make_xy_buf( g_waveForm_aa ) ;
 	}
 
-	clear_waveForm_area() ;
-
 	do_test_wave_proc( DataValue ) ;
-
-	char	bmpFile[500] ;
-	sprintf( bmpFile, "%s.bmp", DataValue ) ;
-	DeleteFile( bmpFile ) ;
-	SaveBMPFile24( bmpFile, g_waveForm_aa, g_waveForm_bb, g_waveForm_pan_dc_buf ) ;
-
-	PopEvent( 5001, (long)bmpFile, "make_freq_from_pcm_data()" ) ;
-
 
 	return ( 0 ) ;
 }
