@@ -92,6 +92,7 @@ private:
 
 	// nextData
 	long	m_next_si, m_next_ei, m_next_ff ;
+	void set_next_data( long comp_nn, double max_dx, long max_dyTot ) ;
 	void make_next_data( long comp_nn, double max_dx, long max_dyTot ) ;
 	long set_NextPeriodData( long i, long comp_nn, double max_dx, long max_dyTot ) ;
 	void push_NextPeriodData( long i, long next_ii ) ;
@@ -157,7 +158,7 @@ public:
 	virtual ~TWavePeriod();
 
 	void clear_period_data() ;
-	double make_period_data(short *pcm_data, long pcm_len, long show_flag ) ;
+	double make_period_data(short *pcm_data, long pcm_len, long show_flag, long print_flag, long nCount ) ;
 
 	void show_period_data() ;
 

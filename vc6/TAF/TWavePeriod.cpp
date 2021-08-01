@@ -99,7 +99,6 @@ void TWavePeriod::make_PeriodYY()
 			push_PeriodYY( nn++, yy ) ;
 		}
 		m_PeriodDa[i].PeriodYY_nn = nn ;
-//		make_SegDY( i ) ;
 	}
 }
 //////////////////////////////////////////////////////////////////////
@@ -614,10 +613,12 @@ long TWavePeriod::set_NextPeriodData( long i, long comp_nn, double max_dx, long 
 //log_prt( g_logFile, "set_NextSegData2 i=%-8ld ii=%-8ld dx=%1.2lf max_dx=%1.2lf dy_tot=%-8ld max_dyTot=%-8ld\r\n", i, ii, dx, max_dx, dy_tot, max_dyTot ) ;
 			if ( dy_tot<=max_dyTot )
 			{
+/**
 log_prt( g_logFile, "push_NextSegData2 i=%-8ld ii=%-8ld di=%-5ld zq_xx=%-10.2lf dx=%-10.2lf max_dx=%-10.2lf dy_tot=%-8ld max_dyTot=%-8ld\r\n", 
 																				i, ii, ii-i, 
 																				m_PeriodDa[ii].xx-m_PeriodDa[i].xx,
 																				dx, max_dx, dy_tot, max_dyTot ) ;
+**/
 				push_NextPeriodData( i, ii ) ;
 				return (ii) ;
 			}
@@ -628,7 +629,7 @@ log_prt( g_logFile, "push_NextSegData2 i=%-8ld ii=%-8ld di=%-5ld zq_xx=%-10.2lf 
 	return ( -1 ) ;
 }
 //////////////////////////////////////////////////////////////////////
-void TWavePeriod::make_next_data( long comp_nn, double max_dx, long max_dyTot )
+void TWavePeriod::set_next_data( long comp_nn, double max_dx, long max_dyTot )
 {
 	long	i, f, m ;
 
@@ -636,6 +637,7 @@ void TWavePeriod::make_next_data( long comp_nn, double max_dx, long max_dyTot )
 	m = 0 ;
 	for ( i=comp_nn; i<m_PeriodDa_mm-comp_nn; i++ )
 	{
+//log_prt( g_logFile, "set_next_data ================================= i=%-8ld m=%-8ld\r\n", i, m ) ;
 		f = set_NextPeriodData( i, comp_nn, max_dx, max_dyTot ) ;
 		if ( f<0 )
 		{
@@ -646,9 +648,13 @@ void TWavePeriod::make_next_data( long comp_nn, double max_dx, long max_dyTot )
 		else
 			m = 0 ;
 	}
+}
+//////////////////////////////////////////////////////////////////////
+void TWavePeriod::make_next_data( long comp_nn, double max_dx, long max_dyTot )
+{
+	set_next_data( comp_nn, max_dx, max_dyTot ) ;
 	make_next_ff() ;
 	set_all_next_ff() ;
-
 }
 //////////////////////////////////////////////////////////////////////
 void TWavePeriod::push_next_ff( long si, long next_ii )
@@ -755,6 +761,9 @@ void TWavePeriod::clear_period_data()
 	m_PeriodDa_mm = 0 ;
 	m_PeriodDa_si = 0 ;
 
+	m_next_si = 0 ;
+	m_next_ei = 0 ;
+
 }
 //////////////////////////////////////////////////////////////////////
 void TWavePeriod::reset_si_vars()
@@ -772,29 +781,34 @@ void TWavePeriod::reset_si_vars()
 	m_PeriodDa_si = m_PeriodDa_mm = i ;
 }
 //////////////////////////////////////////////////////////////////////
-double TWavePeriod::make_period_data(short *pcm_data, long pcm_len, long show_flag )
+double TWavePeriod::make_period_data(short *pcm_data, long pcm_len, long show_flag, long print_flag, long nCount )
 {
+
+log_prt( g_logFile, "00---make_period_data===========================pcm_len=%-8ld show_flag=%-8ld print_flag=%-8ld nCount=%-8ld\r\n", pcm_len, show_flag, print_flag, nCount ) ;
 
 	push_PcmData( pcm_data, pcm_len ) ;
 	if ( show_flag>0 )
 		show_pcm_data( m_PcmData, m_PcmData_mm, RGB(10,50,10), RGB(20,80,20) ) ;
 
-log_prt( g_logFile, "make_period_data========================================================================m_PcmData_si=%-8ld m_PcmData_mm=%-8ld m_PeriodDa_si=%-8ld  m_PeriodDa_mm=%-8ld\r\n", m_PcmData_si, m_PcmData_mm, m_PeriodDa_si, m_PeriodDa_mm ) ;
+log_prt( g_logFile, "01---make_period_data===========================m_PcmData_si=%-8ld m_PcmData_mm=%-8ld m_PeriodDa_si=%-8ld  m_PeriodDa_mm=%-8ld m_next_si=%-8ld m_next_ei=%-8ld\r\n", m_PcmData_si, m_PcmData_mm, m_PeriodDa_si, m_PeriodDa_mm, m_next_si, m_next_ei ) ;
 
 	make_PeriodData() ;
 	if ( show_flag>0 )
 		show_PeriodData( 0, 5, RGB(80,0,50), 0, 0 ) ;
 
 	remove_ShortPeriodData( 1-0.618 ) ; // remove too short Period data
-
 	make_PeriodYY() ;
 
+log_prt( g_logFile, "02---make_period_data===========================m_PcmData_si=%-8ld m_PcmData_mm=%-8ld m_PeriodDa_si=%-8ld  m_PeriodDa_mm=%-8ld m_next_si=%-8ld m_next_ei=%-8ld\r\n", m_PcmData_si, m_PcmData_mm, m_PeriodDa_si, m_PeriodDa_mm, m_next_si, m_next_ei ) ;
+
 	make_next_data(1, 1, 5) ;
+
+log_prt( g_logFile, "03---make_period_data===========================m_PcmData_si=%-8ld m_PcmData_mm=%-8ld m_PeriodDa_si=%-8ld  m_PeriodDa_mm=%-8ld m_next_si=%-8ld m_next_ei=%-8ld\r\n", m_PcmData_si, m_PcmData_mm, m_PeriodDa_si, m_PeriodDa_mm, m_next_si, m_next_ei ) ;
 
 	if ( show_flag>0 )
 		show_PeriodData( 0, 5, RGB(20,50,20), 0, RGB(100,10,10) ) ;
 
-	make_tj_data(show_flag) ;
+	make_tj_data(print_flag) ;
 
 	reset_si_vars() ;
 

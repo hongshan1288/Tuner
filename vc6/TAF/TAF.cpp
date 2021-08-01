@@ -6459,7 +6459,7 @@ long do_test_wave_proc( char *wav_file )
 			{
 				if ( show_flag>0 )
 					clear_waveForm_area() ;
-				period_ff = g_wp->make_period_data( (short*)pcm_data, nRead/2, 0 ) ;
+				period_ff = g_wp->make_period_data( (short*)pcm_data, nRead/2, show_flag, 1, nCount ) ;
 				if ( show_flag>0 )
 					SaveToBmpFile( wav_file, nCount ) ;
 //Sleep( 200 ) ;
@@ -6469,8 +6469,8 @@ long do_test_wave_proc( char *wav_file )
 			nOff += nRead ;
 			nSize -= nRead ;
 			nCount ++ ;
-			if ( nCount>11 )
-				break ;
+//			if ( nCount>11 )
+//				break ;
 		}
 		if ( show_flag==0 )
 		{
