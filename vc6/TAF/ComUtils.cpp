@@ -840,3 +840,12 @@ void clear_waveForm_area()
 }
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
+void SaveToBmpFile( char *waveFile, long nCount )
+{
+	char	bmpFile[500] ;
+	sprintf( bmpFile, "%s-%ld.bmp", waveFile, nCount ) ;
+	DeleteFile( bmpFile ) ;
+	SaveBMPFile24( bmpFile, g_waveForm_aa, g_waveForm_bb, g_waveForm_pan_dc_buf ) ;
+	PopEvent( 5001, (long)bmpFile, "make_freq_from_pcm_data()" ) ;
+}
+//////////////////////////////////////////////////////////////////////

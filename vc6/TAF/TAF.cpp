@@ -6422,15 +6422,6 @@ void init_fbp()
 	g_wp = new TWavePeriod ;
 }
 //////////////////////////////////////////////////////////////////////
-void SaveToBmpFile( char *waveFile, long nCount )
-{
-	char	bmpFile[500] ;
-	sprintf( bmpFile, "%s-%ld.bmp", waveFile, nCount ) ;
-	DeleteFile( bmpFile ) ;
-	SaveBMPFile24( bmpFile, g_waveForm_aa, g_waveForm_bb, g_waveForm_pan_dc_buf ) ;
-	PopEvent( 5001, (long)bmpFile, "make_freq_from_pcm_data()" ) ;
-}
-//////////////////////////////////////////////////////////////////////
 long do_test_wave_proc( char *wav_file )
 {
 	long	nRead, nBytes, nSize, nOff, nCount ;
@@ -6457,11 +6448,11 @@ long do_test_wave_proc( char *wav_file )
 			nRead = ReadBufFromFile( wav_file, pcm_data, nOff, nBytes ) ;
 			if ( nRead>0 ) 
 			{
-				if ( show_flag>0 )
-					clear_waveForm_area() ;
+//				if ( show_flag>0 )
+//					clear_waveForm_area() ;
 				period_ff = g_wp->make_period_data( (short*)pcm_data, nRead/2, show_flag, 1, nCount ) ;
-				if ( show_flag>0 )
-					SaveToBmpFile( wav_file, nCount ) ;
+//				if ( show_flag>0 )
+//					SaveToBmpFile( wav_file, nCount ) ;
 //Sleep( 200 ) ;
 				if ( period_ff<=0 )
 					period_ff = 0 ;

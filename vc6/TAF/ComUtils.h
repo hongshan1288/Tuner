@@ -90,6 +90,7 @@ extern void draw_WaveForm_proc( short *pcm_data, long pcm_len, long pcm_color, l
 //////////////////////////////////////////////////////////////////////
 extern long SaveBMPFile24( char pFileName[], long width, long height, LPVOID BmpBuf ) ;
 extern long SaveBMPFile32( char pFileName[], long width, long height, LPVOID BmpBuf ) ;
+extern void SaveToBmpFile( char *waveFile, long nCount ) ;
 //////////////////////////////////////////////////////////////////////
 extern long make_pan_dc_memory_buf( HDC pan_dc, long aa, long bb ) ;
 extern void clear_pan_dc_memory_buf() ;
