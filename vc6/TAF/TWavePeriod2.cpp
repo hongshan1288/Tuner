@@ -1,16 +1,15 @@
-// TWavePeriod.cpp: implementation of the TWavePeriod class.
+// TWavePeriod2.cpp: implementation of the TWavePeriod2 class.
 //
 //////////////////////////////////////////////////////////////////////
 
 #include "stdafx.h"
-#include "TWavePeriod.h"
+#include "TWavePeriod2.h"
 #include "ComUtils.h"
 #include "DoDrawUtils.h"
-
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
-TWavePeriod::TWavePeriod()
+TWavePeriod2::TWavePeriod2()
 {
 
 	m_MinVV = 1000 ;
@@ -38,7 +37,7 @@ TWavePeriod::TWavePeriod()
 
 }
 //////////////////////////////////////////////////////////////////////
-TWavePeriod::~TWavePeriod()
+TWavePeriod2::~TWavePeriod2()
 {
 	FreeBuf( m_PeriodYY ) ;
 	FreeBuf( m_PeriodDa ) ;
@@ -46,7 +45,7 @@ TWavePeriod::~TWavePeriod()
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
-void TWavePeriod::set_PeriodYY_Len( long nn )
+void TWavePeriod2::set_PeriodYY_Len( long nn )
 {
 	PeriodYY_Type	*pyd ;
 
@@ -60,7 +59,7 @@ void TWavePeriod::set_PeriodYY_Len( long nn )
 	m_PeriodYY_n = nn ;
 }
 //////////////////////////////////////////////////////////////////////
-long TWavePeriod::push_PeriodYY( long xx, short yy )
+long TWavePeriod2::push_PeriodYY( long xx, short yy )
 {
 
 	PeriodYY_Type	*pyd ;
@@ -79,7 +78,7 @@ long TWavePeriod::push_PeriodYY( long xx, short yy )
 }
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
-void TWavePeriod::make_PeriodYY()
+void TWavePeriod2::make_PeriodYY()
 {
 	long	i, nn ;
 	short	yy ;
@@ -102,7 +101,7 @@ void TWavePeriod::make_PeriodYY()
 	}
 }
 //////////////////////////////////////////////////////////////////////
-void TWavePeriod::show_PeriodYY( long idx, long show_color )
+void TWavePeriod2::show_PeriodYY( long idx, long show_color )
 {
 	long	i, nn, si ;
 	double	x0, xx ;
@@ -122,7 +121,7 @@ void TWavePeriod::show_PeriodYY( long idx, long show_color )
 }
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
-void TWavePeriod::set_PeriodDa_Len( long nn )
+void TWavePeriod2::set_PeriodDa_Len( long nn )
 {
 	PeriodDa_Type	*pd ;
 	pd = (PeriodDa_Type*)GlobalAlloc( GPTR, (nn)*sizeof(PeriodDa_Type) ) ;
@@ -135,7 +134,7 @@ void TWavePeriod::set_PeriodDa_Len( long nn )
 	m_PeriodDa_nn = nn ;
 }
 //////////////////////////////////////////////////////////////////////
-long TWavePeriod::push_PeriodDa( short ff, long ix, double xx )
+long TWavePeriod2::push_PeriodDa( short ff, long ix, double xx )
 {
 
 	PeriodDa_Type	*pd ;
@@ -166,7 +165,7 @@ long TWavePeriod::push_PeriodDa( short ff, long ix, double xx )
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
-void TWavePeriod::make_flat_data( short *pcm_data, long pcm_len )
+void TWavePeriod2::make_flat_data( short *pcm_data, long pcm_len )
 {
 	long	vvv ;
 	long	i ;
@@ -180,7 +179,7 @@ void TWavePeriod::make_flat_data( short *pcm_data, long pcm_len )
 	}
 }
 //////////////////////////////////////////////////////////////////////
-void TWavePeriod::push_PcmData(short *pcm_data, long pcm_len)
+void TWavePeriod2::push_PcmData(short *pcm_data, long pcm_len)
 {
 	if ( m_PcmData_mm+pcm_len>m_PcmData_nn )
 		return ;
@@ -195,7 +194,7 @@ void TWavePeriod::push_PcmData(short *pcm_data, long pcm_len)
 }
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
-inline long TWavePeriod::get_sign( long yy )
+inline long TWavePeriod2::get_sign( long yy )
 {
 	if ( yy>0 )
 		return ( 1 ) ;
@@ -205,7 +204,7 @@ inline long TWavePeriod::get_sign( long yy )
 		return ( 0 ) ;
 }
 //////////////////////////////////////////////////////////////////////
-double TWavePeriod::get_xx( long i, long y0, long yy )
+double TWavePeriod2::get_xx( long i, long y0, long yy )
 {
 	double	kk, xx ;
 
@@ -223,7 +222,7 @@ double TWavePeriod::get_xx( long i, long y0, long yy )
 	return ( xx ) ;
 }
 //////////////////////////////////////////////////////////////////////
-short TWavePeriod::get_yy( double xx, short *pcm_data )
+short TWavePeriod2::get_yy( double xx, short *pcm_data )
 {
 	double	kk, yy, x1, x2, y1, y2 ;
 	long	ix ;
@@ -247,7 +246,7 @@ short TWavePeriod::get_yy( double xx, short *pcm_data )
 	return ( (short)yy ) ;
 }
 //////////////////////////////////////////////////////////////////////
-void TWavePeriod::make_PeriodData()
+void TWavePeriod2::make_PeriodData()
 {
 	long	i, ff, yy, y0 ;
 	double	xx ;
@@ -292,7 +291,7 @@ void TWavePeriod::make_PeriodData()
 }
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
-void TWavePeriod::remove_ShortPeriodData( double min_dx )
+void TWavePeriod2::remove_ShortPeriodData( double min_dx )
 {
 	long	i, ii, nn ;
 	double	dx, dx_avg, dx_max ;
@@ -329,7 +328,7 @@ void TWavePeriod::remove_ShortPeriodData( double min_dx )
 	}
 }
 //////////////////////////////////////////////////////////////////////
-void TWavePeriod::show_PeriodData( long di, long y_off, long show_color, long yy_color, long next_color )
+void TWavePeriod2::show_PeriodData( long di, long y_off, long show_color, long yy_color, long next_color )
 {
 	long	i, ix, next_ii ;
 	long	x, y ;
@@ -393,7 +392,7 @@ void TWavePeriod::show_PeriodData( long di, long y_off, long show_color, long yy
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
-long TWavePeriod::draw_VLine( double xx, long y1, long y2, long xoff, long fx, long show_color, char *sa )
+long TWavePeriod2::draw_VLine( double xx, long y1, long y2, long xoff, long fx, long show_color, char *sa )
 {
 	long	x, y00 ;
 	double	dx ;
@@ -416,7 +415,7 @@ long TWavePeriod::draw_VLine( double xx, long y1, long y2, long xoff, long fx, l
 	return ( x ) ;
 }
 //////////////////////////////////////////////////////////////////////
-void TWavePeriod::draw_WaveForm_data( long dot_show_flag, POINT *xy_data, long xy_nn, long line_width, long waveForm_color, long dot_color )
+void TWavePeriod2::draw_WaveForm_data( long dot_show_flag, POINT *xy_data, long xy_nn, long line_width, long waveForm_color, long dot_color )
 {
 	do_Polyline( xy_data, xy_nn, line_width, waveForm_color, PS_SOLID, R2_COPYPEN ) ;
 	do_DrawLine( 0, g_waveForm_bb / 2, g_waveForm_aa-1, g_waveForm_bb / 2, 1, m_DC_line_color, PS_SOLID, R2_COPYPEN ) ;
@@ -435,7 +434,7 @@ void TWavePeriod::draw_WaveForm_data( long dot_show_flag, POINT *xy_data, long x
 	DoEventProc() ;
 }
 //////////////////////////////////////////////////////////////////////
-long TWavePeriod::make_WaveFormData( short *pcm_data, long pcm_len, long xxx, long aaa, POINT *xy_data )
+long TWavePeriod2::make_WaveFormData( short *pcm_data, long pcm_len, long xxx, long aaa, POINT *xy_data )
 {
 	long	i, ii, x, y, x0, y0, min_y, max_y, a_max ;
 	double	xx, dx ;
@@ -527,7 +526,7 @@ long TWavePeriod::make_WaveFormData( short *pcm_data, long pcm_len, long xxx, lo
 	return ( ii ) ;
 }
 //////////////////////////////////////////////////////////////////////
-void TWavePeriod::show_pcm_data( short *pcm_data, long pcm_len, long show_color, long dot_color )
+void TWavePeriod2::show_pcm_data( short *pcm_data, long pcm_len, long show_color, long dot_color )
 {
 	long	xy_nn, xy_size ;
 	POINT	*waveForm_xy ;
@@ -550,7 +549,7 @@ void TWavePeriod::show_pcm_data( short *pcm_data, long pcm_len, long show_color,
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
-long TWavePeriod::get_DyTotFromPeriodData( long i1, long i2, long comp_nn )
+long TWavePeriod2::get_DyTotFromPeriodData( long i1, long i2, long comp_nn )
 {
 	long	i, nn ;
 	long	ii1, ii2 ;
@@ -569,7 +568,7 @@ long TWavePeriod::get_DyTotFromPeriodData( long i1, long i2, long comp_nn )
 	return ( (long)(tot_yy) ) ;
 }
 //////////////////////////////////////////////////////////////////////
-double TWavePeriod::like_NextPeriodData( long i1, long i2, long comp_nn )
+double TWavePeriod2::like_NextPeriodData( long i1, long i2, long comp_nn )
 {
 	long	i ;
 	double	dx1, dx2, dx ;
@@ -587,7 +586,7 @@ double TWavePeriod::like_NextPeriodData( long i1, long i2, long comp_nn )
 	return ( dx ) ;
 }
 //////////////////////////////////////////////////////////////////////
-void TWavePeriod::push_NextPeriodData( long i, long next_ii )
+void TWavePeriod2::push_NextPeriodData( long i, long next_ii )
 {
 	PeriodDa_Type	*sd ;
 	sd = &m_PeriodDa[i] ;
@@ -599,7 +598,7 @@ void TWavePeriod::push_NextPeriodData( long i, long next_ii )
 	m_next_ei = i ;
 }
 //////////////////////////////////////////////////////////////////////
-long TWavePeriod::set_NextPeriodData( long i, long comp_nn, double max_dx, long max_dyTot )
+long TWavePeriod2::set_NextPeriodData( long i, long comp_nn, double max_dx, long max_dyTot )
 {
 	long	ii, dy_tot ;
 	double	dx ;
@@ -629,7 +628,7 @@ log_prt( g_logFile, "push_NextSegData2 i=%-8ld ii=%-8ld di=%-5ld zq_xx=%-10.2lf 
 	return ( -1 ) ;
 }
 //////////////////////////////////////////////////////////////////////
-void TWavePeriod::set_next_data( long comp_nn, double max_dx, long max_dyTot )
+void TWavePeriod2::set_next_data( long comp_nn, double max_dx, long max_dyTot )
 {
 	long	i, f, m ;
 
@@ -650,14 +649,14 @@ void TWavePeriod::set_next_data( long comp_nn, double max_dx, long max_dyTot )
 	}
 }
 //////////////////////////////////////////////////////////////////////
-void TWavePeriod::make_next_data( long comp_nn, double max_dx, long max_dyTot )
+void TWavePeriod2::make_next_data( long comp_nn, double max_dx, long max_dyTot )
 {
 	set_next_data( comp_nn, max_dx, max_dyTot ) ;
 	make_next_ff() ;
 	set_all_next_ff() ;
 }
 //////////////////////////////////////////////////////////////////////
-void TWavePeriod::push_next_ff( long si, long next_ii )
+void TWavePeriod2::push_next_ff( long si, long next_ii )
 {
 	long	i ;
 	double	dx_val, dx ;
@@ -676,7 +675,7 @@ void TWavePeriod::push_next_ff( long si, long next_ii )
 	m_next_ff ++ ;
 }
 //////////////////////////////////////////////////////////////////////
-void TWavePeriod::make_next_ff()
+void TWavePeriod2::make_next_ff()
 {
 	long	i, next_ii ;
 
@@ -696,7 +695,7 @@ void TWavePeriod::make_next_ff()
 	}
 }
 //////////////////////////////////////////////////////////////////////
-void TWavePeriod::set_all_next_ff_ex( long next_ff, long val )
+void TWavePeriod2::set_all_next_ff_ex( long next_ff, long val )
 {
 	long	i, nn ;
 	nn = 1 ;
@@ -710,7 +709,7 @@ void TWavePeriod::set_all_next_ff_ex( long next_ff, long val )
 	}
 }
 //////////////////////////////////////////////////////////////////////
-void TWavePeriod::set_all_next_ff()
+void TWavePeriod2::set_all_next_ff()
 {
 	long	i, k, next_ff ;
 
@@ -750,7 +749,7 @@ void TWavePeriod::set_all_next_ff()
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
-void TWavePeriod::clear_period_data()
+void TWavePeriod2::clear_period_data()
 {
 
 	m_PcmData_si = 0 ;
@@ -766,7 +765,7 @@ void TWavePeriod::clear_period_data()
 
 }
 //////////////////////////////////////////////////////////////////////
-void TWavePeriod::reset_si_vars()
+void TWavePeriod2::reset_si_vars()
 {
 	long	i, ix ;
 	for ( i=m_PeriodDa_mm-1; i>=0; i-- )
@@ -781,7 +780,7 @@ void TWavePeriod::reset_si_vars()
 	m_PeriodDa_si = m_PeriodDa_mm = i ;
 }
 //////////////////////////////////////////////////////////////////////
-double TWavePeriod::make_period_data(short *pcm_data, long pcm_len, long show_flag, long print_flag, long nCount )
+double TWavePeriod2::make_period_data(short *pcm_data, long pcm_len, long show_flag, long print_flag, long nCount )
 {
 
 	if ( show_flag>0 )
@@ -829,7 +828,7 @@ log_prt( g_logFile, "03---make_period_data===========================m_PcmData_s
 
 }
 //////////////////////////////////////////////////////////////////////
-void TWavePeriod::show_period_data()
+void TWavePeriod2::show_period_data()
 {
 	show_pcm_data( m_PcmData, m_PcmData_mm, RGB(10,50,10), RGB(20,80,20) ) ;
 	show_PeriodData( 0, 5, RGB(20,50,20), RGB(0,30,0), RGB(100,10,10) ) ;
@@ -840,14 +839,14 @@ void TWavePeriod::show_period_data()
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
-void TWavePeriod::clear_TJDa()
+void TWavePeriod2::clear_TJDa()
 {
 	long	i ;
 	for ( i=0; i<m_TJDa_m; i++ )
 		m_TJDa->zq_tot = 0 ;
 }
 //////////////////////////////////////////////////////////////////////
-void TWavePeriod::set_TJDa_len( long nn )
+void TWavePeriod2::set_TJDa_len( long nn )
 {
 	TJDa_Type	*tj_data ;
 	tj_data = (TJDa_Type*)GlobalAlloc( GPTR, (nn)*sizeof(TJDa_Type) ) ;
@@ -861,7 +860,7 @@ void TWavePeriod::set_TJDa_len( long nn )
 
 }
 /////////////////////////////////////////////////////////////////////////////
-void TWavePeriod::quick_sort_tj_data( TJDa_Type *tj_data, long iLo, long iHi )
+void TWavePeriod2::quick_sort_tj_data( TJDa_Type *tj_data, long iLo, long iHi )
 {
 	long		iSize, Lo, Hi ;
 	long		Mid ;
@@ -901,12 +900,12 @@ void TWavePeriod::quick_sort_tj_data( TJDa_Type *tj_data, long iLo, long iHi )
  
 }
 /////////////////////////////////////////////////////////////////////////////
-void TWavePeriod::sort_tj_data()
+void TWavePeriod2::sort_tj_data()
 {
 	quick_sort_tj_data( m_TJDa, 0, m_TJDa_m-1 ) ;
 }
 /////////////////////////////////////////////////////////////////////////////
-void TWavePeriod::reverse_tj_data()
+void TWavePeriod2::reverse_tj_data()
 {
 	long	i, m, mm, iSize ;
 
@@ -925,7 +924,7 @@ void TWavePeriod::reverse_tj_data()
 	}
 }
 //////////////////////////////////////////////////////////////////////
-void TWavePeriod::push_tj_data( double zq_dx, double zq_val )
+void TWavePeriod2::push_tj_data( double zq_dx, double zq_val )
 {
 	TJDa_Type	*tjd ;
 	long	i ;
@@ -951,7 +950,7 @@ void TWavePeriod::push_tj_data( double zq_dx, double zq_val )
 	tjd->zq_sum = zq_val ;
 }
 //////////////////////////////////////////////////////////////////////
-void TWavePeriod::avg_tj_data()
+void TWavePeriod2::avg_tj_data()
 {
 	long	i ;
 	for ( i=0; i<m_TJDa_m; i++ )
@@ -961,7 +960,7 @@ void TWavePeriod::avg_tj_data()
 	}
 }
 /////////////////////////////////////////////////////////////////////////////
-void TWavePeriod::remove_tj_data( long min_tot )
+void TWavePeriod2::remove_tj_data( long min_tot )
 {
 	long	i, mm ;
 	TJDa_Type *tj_data ;
@@ -979,7 +978,7 @@ void TWavePeriod::remove_tj_data( long min_tot )
 	m_TJDa_m = i ;
 }
 /////////////////////////////////////////////////////////////////////////////
-void TWavePeriod::remove_some_tj_data()
+void TWavePeriod2::remove_some_tj_data()
 {
 	long	i, mm, zq_tot ;
 	TJDa_Type *tj_data ;
@@ -998,7 +997,7 @@ void TWavePeriod::remove_some_tj_data()
 	m_TJDa_m = i ;
 }
 /////////////////////////////////////////////////////////////////////////////
-void TWavePeriod::group_tj_data()
+void TWavePeriod2::group_tj_data()
 {
 	long	i, k, mm ;
 	TJDa_Type *tj_data ;
@@ -1031,7 +1030,7 @@ void TWavePeriod::group_tj_data()
 	avg_tj_data() ;
 }
 //////////////////////////////////////////////////////////////////////
-void TWavePeriod::clear_next_nn( long next_ff )
+void TWavePeriod2::clear_next_nn( long next_ff )
 {
 	long	i ;
 	for ( i=m_next_si; i<=m_next_ei; i++ )
@@ -1043,7 +1042,7 @@ void TWavePeriod::clear_next_nn( long next_ff )
 	}
 }
 //////////////////////////////////////////////////////////////////////
-long TWavePeriod::make_TJDataEx( long nn )
+long TWavePeriod2::make_TJDataEx( long nn )
 {
 
 	long	i, next_ff, max_nn ;
@@ -1091,14 +1090,14 @@ long TWavePeriod::make_TJDataEx( long nn )
 		return ( 0 ) ;
 }
 //////////////////////////////////////////////////////////////////////
-void TWavePeriod::clear_tj_data()
+void TWavePeriod2::clear_tj_data()
 {
 	if ( m_TJDa_n==0 )
 		set_TJDa_len( 10 ) ;
 	m_TJDa_m = 0 ;
 }
 //////////////////////////////////////////////////////////////////////
-void TWavePeriod::make_TJData()
+void TWavePeriod2::make_TJData()
 {
 
 	clear_tj_data() ;
@@ -1115,7 +1114,7 @@ void TWavePeriod::make_TJData()
 	avg_tj_data() ;
 }
 //////////////////////////////////////////////////////////////////////
-void TWavePeriod::make_tj_data( long show_flag )
+void TWavePeriod2::make_tj_data( long show_flag )
 {
 
 	if ( show_flag>0 )
@@ -1148,7 +1147,7 @@ void TWavePeriod::make_tj_data( long show_flag )
 
 }
 /////////////////////////////////////////////////////////////////////////////
-void TWavePeriod::shrink_tj_data()
+void TWavePeriod2::shrink_tj_data()
 {
 	long	i, mm ;
 	long	ii ;
@@ -1200,7 +1199,7 @@ void TWavePeriod::shrink_tj_data()
 	}
 }
 //////////////////////////////////////////////////////////////////////
-void TWavePeriod::print_tj_data( char print_name[] )
+void TWavePeriod2::print_tj_data( char print_name[] )
 {
 
 
@@ -1227,7 +1226,7 @@ void TWavePeriod::print_tj_data( char print_name[] )
 }
 /////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
-double TWavePeriod::get_max_zq_val()
+double TWavePeriod2::get_max_zq_val()
 {
 	long	i, mm ;
 	double	zq_val ;
@@ -1248,7 +1247,7 @@ double TWavePeriod::get_max_zq_val()
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
-void TWavePeriod::clear_next_data()
+void TWavePeriod2::clear_next_data()
 {
 	long	i ;
 	for ( i=0; i<m_PeriodDa_mm; i++ )
@@ -1259,7 +1258,7 @@ void TWavePeriod::clear_next_data()
 	}
 }
 //////////////////////////////////////////////////////////////////////
-long TWavePeriod::get_DyTot_by_zq( long i0, long i1, long i2 )
+long TWavePeriod2::get_DyTot_by_zq( long i0, long i1, long i2 )
 {
 	long	i, nn ;
 	double	dy_tot ;
@@ -1281,7 +1280,7 @@ long TWavePeriod::get_DyTot_by_zq( long i0, long i1, long i2 )
 	return ( (long)dy_tot ) ;
 }
 //////////////////////////////////////////////////////////////////////
-void TWavePeriod::push_NextData_by_zq( long i, long next_ii )
+void TWavePeriod2::push_NextData_by_zq( long i, long next_ii )
 {
 
 	PeriodDa_Type	*sd ;
@@ -1293,7 +1292,7 @@ void TWavePeriod::push_NextData_by_zq( long i, long next_ii )
 	
 }
 //////////////////////////////////////////////////////////////////////
-long TWavePeriod::get_Idx_by_zq( long i, double zq_val, double max_dx )
+long TWavePeriod2::get_Idx_by_zq( long i, double zq_val, double max_dx )
 {
 	long	ii ;
 	double	xx, dx ;
@@ -1308,7 +1307,7 @@ long TWavePeriod::get_Idx_by_zq( long i, double zq_val, double max_dx )
 	return ( -1 ) ;
 }
 //////////////////////////////////////////////////////////////////////
-long TWavePeriod::get_PreIdx_by_zq( long i0, double zq_len, double max_dx )
+long TWavePeriod2::get_PreIdx_by_zq( long i0, double zq_len, double max_dx )
 {
 	long	i, i1 ;
 	for ( i=i0+1; i<m_PeriodDa_mm; i++ )
@@ -1320,7 +1319,7 @@ long TWavePeriod::get_PreIdx_by_zq( long i0, double zq_len, double max_dx )
 	return ( i ) ;
 }
 //////////////////////////////////////////////////////////////////////
-long TWavePeriod::make_next_data_by_zq( double zq_len, double max_dx, long max_dyTot )
+long TWavePeriod2::make_next_data_by_zq( double zq_len, double max_dx, long max_dyTot )
 {
 	long	ff, i0, i1, i2, dy_tot ;
 

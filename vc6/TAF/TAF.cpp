@@ -7,6 +7,7 @@
 #include "ComUtils.h"
 #include "FreqByPcm.h"
 #include "TWavePeriod.h"
+#include "TWavePeriod2.h"
 
 //#define from_proc_prt	log_printf_ex
 #define from_proc_prt	//
@@ -6414,19 +6415,21 @@ void do_new_show_vars_proc()
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 TFreqByPcm	*g_fbp ;
-TWavePeriod	*g_wp ;
+TWavePeriod		*g_wp ;
+TWavePeriod2	*g_wp2 ;
 //////////////////////////////////////////////////////////////////////
 void init_fbp()
 {
 	g_fbp = new TFreqByPcm ;
 	g_wp = new TWavePeriod ;
+	g_wp2 = new TWavePeriod2 ;
 }
 //////////////////////////////////////////////////////////////////////
 long do_test_wave_proc( char *wav_file )
 {
 	long	nRead, nBytes, nSize, nOff, nCount ;
-	long	show_flag ;
-	double	period_ff ;
+	long	show_flag, print_flag ;
+	double	period_f1, period_f2 ;
 	short	*pcm_data ;
 
 	nOff = 44 ;
@@ -6438,29 +6441,33 @@ long do_test_wave_proc( char *wav_file )
 	nBytes = 8820 ;
 
 	pcm_data = (short*)GlobalAlloc( GPTR, nBytes ) ;
+	strcpy( g_wp->m_WaveFile, wav_file ) ;
 	g_wp->clear_period_data() ;
+	g_wp2->clear_period_data() ;
 	__try
 	{
 		nCount = 0 ;
 		show_flag = 0 ;
+		print_flag = -1 ;
 		while ( nSize>0 )
 		{
 			nRead = ReadBufFromFile( wav_file, pcm_data, nOff, nBytes ) ;
 			if ( nRead>0 ) 
 			{
-//				if ( show_flag>0 )
-//					clear_waveForm_area() ;
-				period_ff = g_wp->make_period_data( (short*)pcm_data, nRead/2, show_flag, 1, nCount ) ;
-//				if ( show_flag>0 )
-//					SaveToBmpFile( wav_file, nCount ) ;
-//Sleep( 200 ) ;
-				if ( period_ff<=0 )
-					period_ff = 0 ;
+				period_f1 = g_wp->make_period_data( (short*)pcm_data, nRead/2, show_flag, print_flag, nCount ) ;
+				if ( period_f1<=0 )
+					period_f1 = 0 ;
+				period_f2 = g_wp2->make_period_data( (short*)pcm_data, nRead/2, show_flag, print_flag, nCount ) ;
+				if ( period_f2<=0 )
+					period_f2 = 0 ;
+
+log_prt( g_logFile, "=======================================================period_f1=%-8.3lf period_f2=%-8.3lf nCount=%-8ld\r\n", period_f1, period_f2, nCount ) ;
+
 			}
 			nOff += nRead ;
 			nSize -= nRead ;
 			nCount ++ ;
-//			if ( nCount>11 )
+//			if ( nCount>3 )
 //				break ;
 		}
 		if ( show_flag==0 )

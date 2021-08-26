@@ -1,9 +1,8 @@
-// TWavePeriod.h: interface for the TWavePeriod class.
+// TWavePeriod2.h: interface for the TWavePeriod2 class.
 //
 //////////////////////////////////////////////////////////////////////
-
-#if !defined(AFX_TWAVEPERIOD_H__C0A74FFF_1619_48BA_8B20_E8FFD46349C9__INCLUDED_)
-#define AFX_TWAVEPERIOD_H__C0A74FFF_1619_48BA_8B20_E8FFD46349C9__INCLUDED_
+#if !defined(AFX_TWAVEPERIOD2_H__7F3FC9FE_B3B0_40D6_981E_B1C6B460AAC1__INCLUDED_)
+#define AFX_TWAVEPERIOD2_H__7F3FC9FE_B3B0_40D6_981E_B1C6B460AAC1__INCLUDED_
 
 #if _MSC_VER > 1000
 #pragma once
@@ -12,7 +11,7 @@
 #include "WavePeriodDT.h"
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
-class TWavePeriod  
+class TWavePeriod2
 {
 
 private:
@@ -130,8 +129,8 @@ public:
 
 public:
 
-	TWavePeriod();
-	virtual ~TWavePeriod();
+	TWavePeriod2();
+	virtual ~TWavePeriod2();
 
 	void clear_period_data() ;
 	double make_period_data(short *pcm_data, long pcm_len, long show_flag, long print_flag, long nCount ) ;
@@ -143,4 +142,4 @@ public:
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 
-#endif // !defined(AFX_TWAVEPERIOD_H__C0A74FFF_1619_48BA_8B20_E8FFD46349C9__INCLUDED_)
+#endif // !defined(AFX_TWAVEPERIOD2_H__7F3FC9FE_B3B0_40D6_981E_B1C6B460AAC1__INCLUDED_)
