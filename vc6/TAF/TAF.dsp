@@ -131,6 +131,10 @@ SOURCE=.\TMakeZQData_1.cpp
 
 SOURCE=.\TWavePeriod.cpp
 # End Source File
+# Begin Source File
+
+SOURCE=.\TWavePeriod2.cpp
+# End Source File
 # End Group
 # Begin Group "Header Files"
 
@@ -174,6 +178,14 @@ SOURCE=.\TMakeZQData_1.h
 # Begin Source File
 
 SOURCE=.\TWavePeriod.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\TWavePeriod2.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\WavePeriodDT.h
 # End Source File
 # End Group
 # Begin Group "Resource Files"

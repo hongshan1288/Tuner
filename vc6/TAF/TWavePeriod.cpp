@@ -781,8 +781,21 @@ void TWavePeriod::reset_si_vars()
 	m_PeriodDa_si = m_PeriodDa_mm = i ;
 }
 //////////////////////////////////////////////////////////////////////
+void TWavePeriod::set_BeginTime()
+{
+	m_BeginTime = GetTickCount() ;
+}
+//////////////////////////////////////////////////////////////////////
+void TWavePeriod::set_EndTime()
+{
+	m_EndTime = GetTickCount() ;
+	m_TimeLen = m_EndTime - m_BeginTime ;
+}
+//////////////////////////////////////////////////////////////////////
 double TWavePeriod::make_period_data(short *pcm_data, long pcm_len, long show_flag, long print_flag, long nCount )
 {
+
+	set_BeginTime() ;
 
 	if ( show_flag>0 )
 		clear_waveForm_area() ;
@@ -821,6 +834,8 @@ log_prt( g_logFile, "03---make_period_data===========================m_PcmData_s
 
 	if ( show_flag>0 )
 		SaveToBmpFile( m_WaveFile, nCount ) ;
+
+	set_EndTime() ;
 
 	if ( m_TJDa_m==1 ) 
 		return ( m_TJDa[0].zq_val ) ;

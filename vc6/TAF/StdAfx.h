@@ -20,7 +20,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "math.h"
+#include <math.h>
+#include <time.h>
 
 
 // TODO: reference additional headers your program requires here

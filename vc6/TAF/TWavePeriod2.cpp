@@ -78,6 +78,37 @@ long TWavePeriod2::push_PeriodYY( long xx, short yy )
 }
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
+inline short TWavePeriod2::get_yy( double xx, short *pcm_data )
+{
+	long	ix ;
+	ix = (long)xx ;
+	return ( pcm_data[ix] ) ;
+}
+//////////////////////////////////////////////////////////////////////
+short TWavePeriod2::get_yy2( double xx, short *pcm_data )
+{
+	double	kk, yy, x1, x2, y1, y2 ;
+	long	ix ;
+
+	ix = (long)xx ;
+	x1 = ix ;
+	x2 = ix+1 ;
+
+	y1 = pcm_data[ix] ;
+	y2 = pcm_data[ix+1] ;
+
+	if ( y1==y2 )
+		yy = y1 ;
+	else if ( fabs(xx-x1)<0.0001 )
+		yy = y1 ;
+	else
+	{
+		kk = (y2-y1) ;
+		yy = kk*(xx-x1)+y1 ;
+	}
+	return ( (short)yy ) ;
+}
+//////////////////////////////////////////////////////////////////////
 void TWavePeriod2::make_PeriodYY()
 {
 	long	i, nn ;
@@ -103,15 +134,15 @@ void TWavePeriod2::make_PeriodYY()
 //////////////////////////////////////////////////////////////////////
 void TWavePeriod2::show_PeriodYY( long idx, long show_color )
 {
-	long	i, nn, si ;
-	double	x0, xx ;
+	long	x0, i, nn, si ;
+	double	xx ;
 	short	yy ;
 
 	m_LineMode = PS_DASH ;
 
 	si = m_PeriodDa[idx].PeriodYY_si ;
 	nn = m_PeriodDa[idx].PeriodYY_nn ;
-	x0 = m_PeriodDa[idx].xx ;
+	x0 = (long)m_PeriodDa[idx].xx ;
 	for ( i=0; i<nn; i++ )
 	{
 		xx = m_PeriodYY[i+si].xx ;
@@ -220,30 +251,6 @@ double TWavePeriod2::get_xx( long i, long y0, long yy )
 		xx += i-1 ;
 	}
 	return ( xx ) ;
-}
-//////////////////////////////////////////////////////////////////////
-short TWavePeriod2::get_yy( double xx, short *pcm_data )
-{
-	double	kk, yy, x1, x2, y1, y2 ;
-	long	ix ;
-
-	ix = (long)xx ;
-	x1 = ix ;
-	x2 = ix+1 ;
-
-	y1 = pcm_data[ix] ;
-	y2 = pcm_data[ix+1] ;
-
-	if ( y1==y2 )
-		yy = y1 ;
-	else if ( fabs(xx-x1)<0.0001 )
-		yy = y1 ;
-	else
-	{
-		kk = (y2-y1) ;
-		yy = kk*(xx-x1)+y1 ;
-	}
-	return ( (short)yy ) ;
 }
 //////////////////////////////////////////////////////////////////////
 void TWavePeriod2::make_PeriodData()
@@ -428,7 +435,7 @@ void TWavePeriod2::draw_WaveForm_data( long dot_show_flag, POINT *xy_data, long 
 		{
 			x = xy_data[i].x ;
 			y = xy_data[i].y ;
-			do_DrawBar( x-1, y-1, x+1, y+1, dot_color, PS_SOLID, R2_COPYPEN ) ;
+			do_DrawBar( x-1, y-1, x+2, y+1, dot_color, PS_SOLID, R2_COPYPEN ) ;
 		}
 	}
 	DoEventProc() ;
@@ -780,8 +787,21 @@ void TWavePeriod2::reset_si_vars()
 	m_PeriodDa_si = m_PeriodDa_mm = i ;
 }
 //////////////////////////////////////////////////////////////////////
+void TWavePeriod2::set_BeginTime()
+{
+	m_BeginTime = GetTickCount() ;
+}
+//////////////////////////////////////////////////////////////////////
+void TWavePeriod2::set_EndTime()
+{
+	m_EndTime = GetTickCount() ;
+	m_TimeLen = m_EndTime - m_BeginTime ;
+}
+//////////////////////////////////////////////////////////////////////
 double TWavePeriod2::make_period_data(short *pcm_data, long pcm_len, long show_flag, long print_flag, long nCount )
 {
+
+	set_BeginTime() ;
 
 	if ( show_flag>0 )
 		clear_waveForm_area() ;
@@ -812,7 +832,7 @@ if ( print_flag>=0 )
 log_prt( g_logFile, "03---make_period_data===========================m_PcmData_si=%-8ld m_PcmData_mm=%-8ld m_PeriodDa_si=%-8ld  m_PeriodDa_mm=%-8ld m_next_si=%-8ld m_next_ei=%-8ld\r\n", m_PcmData_si, m_PcmData_mm, m_PeriodDa_si, m_PeriodDa_mm, m_next_si, m_next_ei ) ;
 
 	if ( show_flag>0 )
-		show_PeriodData( 0, 5, RGB(20,50,20), 0, RGB(100,10,10) ) ;
+		show_PeriodData( 0, 5, RGB(20,50,20), RGB(10,10,100), RGB(100,10,10) ) ;
 
 	make_tj_data(print_flag) ;
 
@@ -820,6 +840,8 @@ log_prt( g_logFile, "03---make_period_data===========================m_PcmData_s
 
 	if ( show_flag>0 )
 		SaveToBmpFile( m_WaveFile, nCount ) ;
+
+	set_EndTime() ;
 
 	if ( m_TJDa_m==1 ) 
 		return ( m_TJDa[0].zq_val ) ;

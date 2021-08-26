@@ -6442,6 +6442,7 @@ long do_test_wave_proc( char *wav_file )
 
 	pcm_data = (short*)GlobalAlloc( GPTR, nBytes ) ;
 	strcpy( g_wp->m_WaveFile, wav_file ) ;
+	sprintf( g_wp2->m_WaveFile, "%s.2", wav_file ) ;
 	g_wp->clear_period_data() ;
 	g_wp2->clear_period_data() ;
 	__try
@@ -6452,6 +6453,7 @@ long do_test_wave_proc( char *wav_file )
 		while ( nSize>0 )
 		{
 			nRead = ReadBufFromFile( wav_file, pcm_data, nOff, nBytes ) ;
+			period_f1 = period_f2 = 0 ;
 			if ( nRead>0 ) 
 			{
 				period_f1 = g_wp->make_period_data( (short*)pcm_data, nRead/2, show_flag, print_flag, nCount ) ;
@@ -6460,21 +6462,19 @@ long do_test_wave_proc( char *wav_file )
 				period_f2 = g_wp2->make_period_data( (short*)pcm_data, nRead/2, show_flag, print_flag, nCount ) ;
 				if ( period_f2<=0 )
 					period_f2 = 0 ;
-
-log_prt( g_logFile, "=======================================================period_f1=%-8.3lf period_f2=%-8.3lf nCount=%-8ld\r\n", period_f1, period_f2, nCount ) ;
-
+log_prt( g_logFile, "=======================================================period_f1=%-8.3lf(%-8.3lf) period_f2=%-8.3f(%-8.3lf) nCount=%-8ld\r\n", period_f1, g_wp->m_TimeLen, period_f2, g_wp2->m_TimeLen, nCount ) ;
 			}
 			nOff += nRead ;
 			nSize -= nRead ;
 			nCount ++ ;
-//			if ( nCount>3 )
+//			if ( nCount>0 )
 //				break ;
 		}
 		if ( show_flag==0 )
 		{
 			clear_waveForm_area() ;
-			g_wp->show_period_data() ;
-			SaveToBmpFile( wav_file, nCount ) ;
+			g_wp2->show_period_data() ;
+			SaveToBmpFile( g_wp2->m_WaveFile, nCount ) ;
 		}
 	}
 	__finally

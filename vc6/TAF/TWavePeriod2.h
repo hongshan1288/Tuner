@@ -45,6 +45,7 @@ private:
 	long get_sign( long yy ) ;
 	double get_xx( long i, long y0, long yy ) ;
 	short get_yy( double xx, short *pcm_data ) ;
+	short get_yy2( double xx, short *pcm_data ) ;
 
 	void make_PeriodData() ;
 	void remove_ShortPeriodData( double min_dx ) ;
@@ -124,8 +125,14 @@ private:
 
 	void show_pcm_data( short *pcm_data, long pcm_len, long show_color, long dot_color ) ;
 
+	void set_BeginTime() ;
+	void set_EndTime() ;
+
 public:
 	char	m_WaveFile[2048] ;
+
+	DWORD  m_BeginTime, m_EndTime;
+	double	m_TimeLen ;	
 
 public:
 

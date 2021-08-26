@@ -17,7 +17,6 @@ class TWavePeriod
 
 private:
 
-
 	// pcm data
 	double	m_MinVV ;
 	long	m_FlatVV ;
@@ -125,8 +124,15 @@ private:
 
 	void show_pcm_data( short *pcm_data, long pcm_len, long show_color, long dot_color ) ;
 
+	void set_BeginTime() ;
+	void set_EndTime() ;
+
+
 public:
 	char	m_WaveFile[2048] ;
+
+	DWORD  m_BeginTime, m_EndTime;
+	double	m_TimeLen ;	
 
 public:
 
