@@ -131,7 +131,7 @@ private:
 public:
 	char	m_WaveFile[2048] ;
 
-	DWORD  m_BeginTime, m_EndTime;
+	LONGLONG	m_BeginTime, m_EndTime;
 	double	m_TimeLen ;	
 
 public:

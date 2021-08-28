@@ -35,6 +35,7 @@ TWavePeriod::TWavePeriod()
 	m_zq_val = 1.2 ;
 	m_zq_dx = 1.2 ;
 
+	m_TimeLen = 0 ;
 
 }
 //////////////////////////////////////////////////////////////////////
@@ -126,6 +127,8 @@ void TWavePeriod::set_PeriodDa_Len( long nn )
 {
 	PeriodDa_Type	*pd ;
 	pd = (PeriodDa_Type*)GlobalAlloc( GPTR, (nn)*sizeof(PeriodDa_Type) ) ;
+	if ( pd==NULL ) 
+		pd=pd ;
 	if ( m_PeriodDa_nn>0 && m_PeriodDa != NULL ) 
 	{
 		CopyMemory( pd, m_PeriodDa, m_PeriodDa_nn*sizeof(PeriodDa_Type) ) ;
@@ -783,13 +786,13 @@ void TWavePeriod::reset_si_vars()
 //////////////////////////////////////////////////////////////////////
 void TWavePeriod::set_BeginTime()
 {
-	m_BeginTime = GetTickCount() ;
+	m_BeginTime = g_ms->GetUS0() ;
 }
 //////////////////////////////////////////////////////////////////////
 void TWavePeriod::set_EndTime()
 {
-	m_EndTime = GetTickCount() ;
-	m_TimeLen = m_EndTime - m_BeginTime ;
+	m_EndTime = g_ms->GetUS0() ;
+	m_TimeLen = (double)(m_EndTime - m_BeginTime) ;
 }
 //////////////////////////////////////////////////////////////////////
 double TWavePeriod::make_period_data(short *pcm_data, long pcm_len, long show_flag, long print_flag, long nCount )
