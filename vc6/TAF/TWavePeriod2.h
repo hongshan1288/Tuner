@@ -14,8 +14,6 @@
 struct	PeriodDa_Type2
 {
 	long	ix ;
-//	long	PeriodYY_si ;
-//	long	PeriodYY_nn ;
 	short	ff, vv ;
 	long	next_ii ;
 	long	next_ff ;
@@ -54,9 +52,6 @@ private:
 	void clear_next_data() ;
 	
 	long get_sign( long yy ) ;
-	double get_xx( long i, long y0, long yy ) ;
-	short get_yy( double xx, short *pcm_data ) ;
-	short get_yy2( double xx, short *pcm_data ) ;
 
 	void make_PeriodData() ;
 	void remove_ShortPeriodData( double min_dx ) ;
@@ -65,14 +60,7 @@ private:
 
 
 	// PeriodYY
-	PeriodYY_Type	*m_PeriodYY ;
-	long			m_PeriodYY_m, m_PeriodYY_n ;
-	void	set_PeriodYY_Len( long nn ) ;
-
-	long push_PeriodYY( long xx, short yy ) ;
-	void make_PeriodYY() ;
 	void show_PeriodYY( long i, long show_color ) ;
-
 
 
 	// nextData
@@ -83,7 +71,6 @@ private:
 	void push_NextPeriodData( long i, long next_ii ) ;
 	double like_NextPeriodData( long i1, long i2, long comp_nn ) ;
 	long get_DyTotFromPeriodData( long i1, long i2, long comp_nn ) ;
-	long get_DyTotFromPeriodData_old( long i1, long i2, long comp_nn ) ;
 
 	void push_next_ff( long si, long next_ii ) ;
 	void make_next_ff() ;
@@ -130,7 +117,6 @@ private:
 	long make_next_data_by_zq( double zq_len, double max_dx, long max_dyTot ) ;
 
 
-	long get_DyTot_by_zq_old( long i0, long i1, long i2 ) ;
 	long get_DyTot_by_zq( long i0, long i1, long i2 ) ;
 	void push_NextData_by_zq( long i, long next_ii ) ;
 	long get_Idx_by_zq( long i, double zq_val, double max_dx ) ;

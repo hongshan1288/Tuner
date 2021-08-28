@@ -16,13 +16,9 @@ TWavePeriod2::TWavePeriod2()
 	m_FlatVV = 3200/8 ; // 平滑值
 	m_DC_line_color = RGB( 80, 10, 10 ) ;
 
-	m_PeriodYY_m = 0 ;
-	m_PeriodYY_n = 0 ;
-	set_PeriodYY_Len( 1000 ) ;
-
 	m_PeriodDa_mm = 0 ;
 	m_PeriodDa_nn = 0 ;
-	set_PeriodDa_Len( 100 ) ;
+	set_PeriodDa_Len( 500 ) ;
 
 	m_PcmData_nn = 30 * 44100 ; // 30秒单声道的缓冲区
 	m_PcmData = (short*)GlobalAlloc(GPTR, m_PcmData_nn*sizeof(short) ) ;
@@ -40,126 +36,22 @@ TWavePeriod2::TWavePeriod2()
 //////////////////////////////////////////////////////////////////////
 TWavePeriod2::~TWavePeriod2()
 {
-	FreeBuf( m_PeriodYY ) ;
 	FreeBuf( m_PeriodDa ) ;
 }
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
-void TWavePeriod2::set_PeriodYY_Len( long nn )
-{
-	PeriodYY_Type	*pyd ;
-
-	pyd = (PeriodYY_Type*)GlobalAlloc( GPTR, (nn)*sizeof(PeriodYY_Type) ) ;
-	if ( pyd == NULL )
-		pyd = pyd ;
-
-	if ( m_PeriodYY_n>0 && m_PeriodYY != NULL ) 
-	{
-		CopyMemory( pyd, m_PeriodYY, m_PeriodYY_n*sizeof(PeriodYY_Type) ) ;
-		FreeBuf( m_PeriodYY ) ;
-	}
-	m_PeriodYY = pyd ;
-	m_PeriodYY_n = nn ;
-}
-//////////////////////////////////////////////////////////////////////
-long TWavePeriod2::push_PeriodYY( long xx, short yy )
-{
-
-	PeriodYY_Type	*pyd ;
-
-	pyd = m_PeriodYY ;
-	pyd += m_PeriodYY_m++ ;
-
-	pyd->xx = xx ;
-	pyd->yy = yy ;
-
-	if ( m_PeriodYY_m>=m_PeriodYY_n )
-		set_PeriodYY_Len( m_PeriodYY_n+1000 ) ;
-
-	return ( m_PeriodYY_m-1 ) ;
-
-}
-//////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////
-inline short TWavePeriod2::get_yy( double xx, short *pcm_data )
-{
-	long	ix ;
-	ix = (long)xx ;
-	return ( pcm_data[ix] ) ;
-}
-//////////////////////////////////////////////////////////////////////
-short TWavePeriod2::get_yy2( double xx, short *pcm_data )
-{
-	double	kk, yy, x1, x2, y1, y2 ;
-	long	ix ;
-
-	ix = (long)xx ;
-	x1 = ix ;
-	x2 = ix+1 ;
-
-	y1 = pcm_data[ix] ;
-	y2 = pcm_data[ix+1] ;
-
-	if ( y1==y2 )
-		yy = y1 ;
-	else if ( fabs(xx-x1)<0.0001 )
-		yy = y1 ;
-	else
-	{
-		kk = (y2-y1) ;
-		yy = kk*(xx-x1)+y1 ;
-	}
-	return ( (short)yy ) ;
-}
-//////////////////////////////////////////////////////////////////////
-/**
-void TWavePeriod2::make_PeriodYY()
-{
-	long	i, nn, ii, ix, ix_tot ;
-	short	yy ;
-//	double	xx_tot, xx, x0, dx=1 ;
-
-	for ( i=m_PeriodDa_si; i<m_PeriodDa_mm-1; i++ )
-	{
-		if ( i==m_PeriodDa_si+20 )
-			i = i ;
-		push_PeriodYY( 0, 0 ) ; //原点肯定是0
-		m_PeriodDa[i].PeriodYY_si = m_PeriodYY_m ;
-//		x0 = m_PeriodDa[i].xx ;
-//		xx_tot = m_PeriodDa[i+1].xx-x0 ;
-		ix = m_PeriodDa[i].ix ;
-		ix_tot = m_PeriodDa[i+1].ix-ix ;
-		nn = 1 ;
-//		for ( xx=dx; xx<xx_tot; xx+=dx )
-		for ( ii=0; ii<ix_tot; ii++ )
-		{
-//			yy = get_yy( x0+xx, m_PcmData ) ;	
-			yy = m_PcmData[ix+ii] ;
-			push_PeriodYY( nn++, yy ) ;
-		}
-		m_PeriodDa[i].PeriodYY_nn = nn ;
-	}
-}
-**/
 //////////////////////////////////////////////////////////////////////
 void TWavePeriod2::show_PeriodYY( long idx, long show_color )
 {
 	long	x0, i, nn ;
 	double	xx ;
 	short	yy ;
-
 	m_LineMode = PS_DASH ;
-
-//	si = m_PeriodDa[idx].PeriodYY_si ;
-//	nn = m_PeriodDa[idx].PeriodYY_nn ;
-//	x0 = (long)m_PeriodDa[idx].xx ;
 	x0 = (long)m_PeriodDa[idx].ix ;
 	nn = m_PeriodDa[idx+1].ix-m_PeriodDa[idx].ix ;
 	for ( i=0; i<nn; i++ )
 	{
-//		xx = m_PeriodYY[i+si].xx ;
-//		yy = m_PeriodYY[i+si].yy ;
 		xx = x0 + i ;
 		yy = m_PcmData[x0+i] ;
 		draw_VLine( x0+i, 0, yy, 0, 0, show_color, "" ) ;
@@ -204,7 +96,7 @@ long TWavePeriod2::push_PeriodDa( short ff, long ix )
 	m_PeriodDa_mm++ ;
 
 	if ( m_PeriodDa_mm>=m_PeriodDa_nn )
-		set_PeriodDa_Len( m_PeriodDa_nn+100 ) ;
+		set_PeriodDa_Len( m_PeriodDa_nn+500 ) ;
 
 	return ( m_PeriodDa_mm-1 ) ;
 
@@ -217,13 +109,15 @@ void TWavePeriod2::make_flat_data( short *pcm_data, long pcm_len )
 {
 	long	vvv ;
 	long	i ;
+	short	*pp ;
 
+	pp = pcm_data ;
 	for ( i=0; i<pcm_len; i++ )
 	{
-		vvv = pcm_data[i] ;
+		vvv = *pp ;
 		vvv /= m_FlatVV ;
 		vvv *= m_FlatVV ;
-		pcm_data[i] = (short)(vvv) ;
+		*pp++ = (short)(vvv) ;
 	}
 }
 //////////////////////////////////////////////////////////////////////
@@ -250,24 +144,6 @@ inline long TWavePeriod2::get_sign( long yy )
 		return ( -1 ) ;
 	else
 		return ( 0 ) ;
-}
-//////////////////////////////////////////////////////////////////////
-double TWavePeriod2::get_xx( long i, long y0, long yy )
-{
-	double	kk, xx ;
-
-	if ( yy==0 )
-		xx = i ;
-	else if ( y0==0 )
-		xx = i-1 ;
-	else
-	{
-		kk = -(yy-y0) ;
-		kk = 1 / kk ;
-		xx = kk*y0 ;
-		xx += i-1 ;
-	}
-	return ( xx ) ;
 }
 //////////////////////////////////////////////////////////////////////
 void TWavePeriod2::make_PeriodData()
@@ -321,7 +197,6 @@ void TWavePeriod2::remove_ShortPeriodData( double min_dx )
 	dx_max = 0 ;
 	for ( i=m_PeriodDa_si+1; i<m_PeriodDa_mm; i++ )
 	{
-//		dx = m_PeriodDa[i].xx-m_PeriodDa[i-1].xx ;
 		dx = m_PeriodDa[i].ix-m_PeriodDa[i-1].ix ;
 		if ( dx_max<dx )
 			dx_max = dx ;
@@ -334,7 +209,6 @@ void TWavePeriod2::remove_ShortPeriodData( double min_dx )
 	ii = m_PeriodDa_si ;
 	for ( i=m_PeriodDa_si+1; i<m_PeriodDa_mm;)
 	{
-//		dx = m_PeriodDa[i].xx-m_PeriodDa[ii].xx ;
 		dx = m_PeriodDa[i].ix-m_PeriodDa[ii].ix ;
 		if ( dx<dx_avg || dx<dx_max/2 )
 		{
@@ -363,12 +237,10 @@ void TWavePeriod2::show_PeriodData( long di, long y_off, long show_color, long y
 		if ( i==0 )
 			dx = 0 ;
 		else
-//			dx = m_PeriodDa[i].xx-m_PeriodDa[i-1].xx ;
 			dx = m_PeriodDa[i].ix-m_PeriodDa[i-1].ix ;
 
 		ix = m_PeriodDa[i].ix ;
 		xx = ix ;
-//		xx = m_PeriodDa[i].xx ;
 
 		sprintf( ss, "%ld-%ld-%1.1lf", i, ix, dx ) ;
 		if ( ( i % 2 )==0 )
@@ -395,7 +267,6 @@ void TWavePeriod2::show_PeriodData( long di, long y_off, long show_color, long y
 				next_ii = m_PeriodDa[i].next_ii ;
 				if ( next_ii>0 )
 				{
-//					sprintf( ss, "%ld-%ld-%1.1lf", i, next_ii, m_PeriodDa[next_ii].xx-xx ) ;
 					sprintf( ss, "%ld-%ld-%1ld", i, next_ii, m_PeriodDa[next_ii].ix-ix ) ;
 					if ( ( i % 2 )==0 )
 						x = draw_VLine( xx, 0, -32000, di, -(y_off+20), next_color, ss ) ;
@@ -574,54 +445,16 @@ void TWavePeriod2::show_pcm_data( short *pcm_data, long pcm_len, long show_color
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
-/**
-long TWavePeriod2::get_DyTotFromPeriodData_old( long i1, long i2, long comp_nn )
-{
-	long	i, nn ;
-	long	ii1, ii2 ;
-	double	tot_yy ;
-	PeriodYY_Type	*py1, *py2 ;
-
-	nn = m_PeriodDa[i1].PeriodYY_si-m_PeriodDa[i1-comp_nn].PeriodYY_si ;
-	ii1 = m_PeriodDa[i1-comp_nn].PeriodYY_si ;
-	ii2 = m_PeriodDa[i2-comp_nn].PeriodYY_si ;
-
-	py1 = &m_PeriodYY[ii1] ;
-	py2 = &m_PeriodYY[ii2] ;
-
-	tot_yy = 0 ;
-	for ( i=0; i<nn; i++ )
-	{
-//		tot_yy += fabs(m_PeriodYY[i+ii1].yy-m_PeriodYY[i+ii2].yy) ;
-		tot_yy += fabs(py1->yy-py2->yy) ;
-		py1 ++ ;
-		py2 ++ ;
-	}
-
-	tot_yy /= m_FlatVV ;
-	tot_yy /= nn ;
-	return ( (long)(tot_yy) ) ;
-}
-**/
-//////////////////////////////////////////////////////////////////////
 long TWavePeriod2::get_DyTotFromPeriodData( long i1, long i2, long comp_nn )
 {
 	long	i, nn ;
 	long	ii1, ii2 ;
 	double	tot_yy ;
 	short	*pcm1, *pcm2 ;
-//	PeriodYY_Type	*py1, *py2 ;
-
-//	nn = m_PeriodDa[i1].PeriodYY_si-m_PeriodDa[i1-comp_nn].PeriodYY_si ;
-//	ii1 = m_PeriodDa[i1-comp_nn].PeriodYY_si ;
-//	ii2 = m_PeriodDa[i2-comp_nn].PeriodYY_si ;
-//	py1 = &m_PeriodYY[ii1] ;
-//	py2 = &m_PeriodYY[ii2] ;
 
 	nn = m_PeriodDa[i1].ix-m_PeriodDa[i1-comp_nn].ix ;
 	ii1 = m_PeriodDa[i1-comp_nn].ix ;
 	ii2 = m_PeriodDa[i2-comp_nn].ix ;
-
 
 	pcm1 = &m_PcmData[ii1] ;
 	pcm2 = &m_PcmData[ii2] ;
@@ -629,11 +462,7 @@ long TWavePeriod2::get_DyTotFromPeriodData( long i1, long i2, long comp_nn )
 	tot_yy = 0 ;
 	for ( i=0; i<nn; i++ )
 	{
-//		tot_yy += fabs(m_PeriodYY[i+ii1].yy-m_PeriodYY[i+ii2].yy) ;
-//		tot_yy += fabs(py1->yy-py2->yy) ;
-		tot_yy += fabs(*pcm1-*pcm2) ;
-		pcm1 ++ ;
-		pcm2 ++ ;
+		tot_yy += fabs(*pcm1++ - *pcm2++) ;
 	}
 
 	tot_yy /= m_FlatVV ;
@@ -656,8 +485,8 @@ double TWavePeriod2::like_NextPeriodData( long i1, long i2, long comp_nn )
 	dx1 = dx2 = 0 ;
 	for ( i=0; i<comp_nn; i++ )
 	{
-		dx1 += pt1->ix-(pt1-1)->ix ; //m_PeriodDa[i+i1].ix-m_PeriodDa[i+i1-1].ix ;
-		dx2 += pt2->ix-(pt2-1)->ix ; //m_PeriodDa[i+i2].ix-m_PeriodDa[i+i2-1].ix ;
+		dx1 += pt1->ix-(pt1-1)->ix ;
+		dx2 += pt2->ix-(pt2-1)->ix ;
 		pt1 ++ ;
 		pt2 ++ ;
 	}
@@ -705,7 +534,6 @@ void TWavePeriod2::set_next_data( long comp_nn, double max_dx, long max_dyTot )
 	m = 0 ;
 	for ( i=m_PeriodDa_si+comp_nn; i<m_PeriodDa_mm-comp_nn; i++ )
 	{
-//log_prt( g_logFile, "set_next_data ================================= i=%-8ld m=%-8ld\r\n", i, m ) ;
 		f = set_NextPeriodData( i, comp_nn, max_dx, max_dyTot ) ;
 		if ( f<0 )
 		{
@@ -730,19 +558,16 @@ void TWavePeriod2::push_next_ff( long si, long next_ii )
 	long	i ;
 	double	dx_val, dx ;
 
-//	dx_val = m_PeriodDa[next_ii].xx-m_PeriodDa[si].xx ;
 	dx_val = m_PeriodDa[next_ii].ix-m_PeriodDa[si].ix ;
 	for ( i=si; i<m_PeriodDa_mm; )
 	{
 		next_ii = m_PeriodDa[i].next_ii ;
-//		dx = m_PeriodDa[next_ii].xx-m_PeriodDa[i].xx ;
 		dx = m_PeriodDa[next_ii].ix-m_PeriodDa[i].ix ;
 		if ( fabs(dx-dx_val)>dx_val/10 )
 			break ;
 		m_PeriodDa[i].next_ff = m_next_ff ;
 		i = next_ii ;
 	}
-
 	m_next_ff ++ ;
 }
 //////////////////////////////////////////////////////////////////////
@@ -826,8 +651,6 @@ void TWavePeriod2::clear_period_data()
 	m_PcmData_si = 0 ;
 	m_PcmData_mm = 0 ;
 
-	m_PeriodYY_m = 0 ;
-
 	m_PeriodDa_mm = 0 ;
 	m_PeriodDa_si = 0 ;
 
@@ -886,8 +709,6 @@ log_prt( g_logFile, "01---make_period_data===========================m_PcmData_s
 		show_PeriodData( 0, 5, RGB(80,0,50), 0, 0 ) ;
 
 	remove_ShortPeriodData( 1-0.618 ) ; // remove too short Period data
-
-//	make_PeriodYY() ;
 
 if ( print_flag>=0 )
 log_prt( g_logFile, "02---make_period_data===========================m_PcmData_si=%-8ld m_PcmData_mm=%-8ld m_PeriodDa_si=%-8ld  m_PeriodDa_mm=%-8ld m_next_si=%-8ld m_next_ei=%-8ld\r\n", m_PcmData_si, m_PcmData_mm, m_PeriodDa_si, m_PeriodDa_mm, m_next_si, m_next_ei ) ;
@@ -1165,11 +986,8 @@ long TWavePeriod2::make_TJDataEx( long nn )
 			if ( next_ff==m_PeriodDa[i].next_ff )
 			{
 				next_ii = m_PeriodDa[i].next_ii ;
-//				zq_dx = m_PeriodDa[i+1].xx-m_PeriodDa[i].xx ;
-//				zq_val = m_PeriodDa[next_ii].xx-m_PeriodDa[i].xx ;
 				zq_dx = m_PeriodDa[i+1].ix-m_PeriodDa[i].ix ;
 				zq_val = m_PeriodDa[next_ii].ix-m_PeriodDa[i].ix ;
-//log_prt( g_logFile, "make_TJData2----i=%-8ld next_ii=%-8ld di=%-5ld zq_dx=%-11.1lf zq_val=%-11.1lf\r\n", i, next_ii, next_ii-i, zq_dx, zq_val ) ;
 				push_tj_data( zq_dx, zq_val ) ;
 			}
 		}
@@ -1348,30 +1166,6 @@ void TWavePeriod2::clear_next_data()
 	}
 }
 //////////////////////////////////////////////////////////////////////
-/**
-long TWavePeriod2::get_DyTot_by_zq_old( long i0, long i1, long i2 )
-{
-	long	i, nn ;
-	double	dy_tot ;
-	long	ii0, ii1 ;
-
-	dy_tot = 0 ;
-
-	nn = m_PeriodDa[i1].PeriodYY_si-m_PeriodDa[i0].PeriodYY_si ;
-	if ( nn>m_PeriodDa[i2].PeriodYY_si-m_PeriodDa[i1].PeriodYY_si )
-		nn = m_PeriodDa[i2].PeriodYY_si-m_PeriodDa[i1].PeriodYY_si ;
-	ii0 = m_PeriodDa[i0].PeriodYY_si ;
-	ii1 = m_PeriodDa[i1].PeriodYY_si ;
-	for ( i=0; i<nn; i++ )
-	{
-		dy_tot += fabs(m_PeriodYY[i+ii0].yy-m_PeriodYY[i+ii1].yy ) ;
-	}
-	dy_tot /= m_FlatVV ;
-	dy_tot /= nn ;
-	return ( (long)dy_tot ) ;
-}
-**/
-//////////////////////////////////////////////////////////////////////
 long TWavePeriod2::get_DyTot_by_zq( long i0, long i1, long i2 )
 {
 	long	i, nn ;
@@ -1387,7 +1181,6 @@ long TWavePeriod2::get_DyTot_by_zq( long i0, long i1, long i2 )
 	ii1 = m_PeriodDa[i1].ix ;
 	for ( i=0; i<nn; i++ )
 	{
-//		dy_tot += fabs(m_PeriodYY[i+ii0].yy-m_PeriodYY[i+ii1].yy ) ;
 		dy_tot += fabs(m_PcmData[i+ii0]-m_PcmData[i+ii1] ) ;
 	}
 	dy_tot /= m_FlatVV ;
@@ -1412,11 +1205,9 @@ long TWavePeriod2::get_Idx_by_zq( long i, double zq_val, double max_dx )
 	long	ii ;
 	double	xx, dx ;
 
-//	xx = m_PeriodDa[i].xx ;
 	xx = m_PeriodDa[i].ix ;
 	for ( ii=i+1; ii<m_PeriodDa_mm; ii++ )
 	{
-//		dx = m_PeriodDa[ii].xx-xx ;
 		dx = m_PeriodDa[ii].ix-xx ;
 		if ( fabs(dx-zq_val)<max_dx )
 			return ( ii ) ;
