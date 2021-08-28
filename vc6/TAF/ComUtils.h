@@ -6,6 +6,7 @@
 #pragma once
 #endif // _MSC_VER > 1000
 
+#include "LongLongMS.h"
 //////////////////////////////////////////////////////////////////////
 #define FreeBuf( a ) { \
 	if ( (a)==INVALID_HANDLE_VALUE || (a)==NULL ) \
@@ -34,6 +35,7 @@
 #endif
 
 //////////////////////////////////////////////////////////////////////
+extern LongLongMS	*g_ms ;
 extern HWND	g_CallBack_Handle ;
 extern HWND	g_waveForm_wnd, g_dataInfo_wnd ;
 extern HDC		g_waveForm_DC, g_dataInfo_DC ;

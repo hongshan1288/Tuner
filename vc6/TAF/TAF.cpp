@@ -8,6 +8,7 @@
 #include "FreqByPcm.h"
 #include "TWavePeriod.h"
 #include "TWavePeriod2.h"
+#include "LongLongMS.h"
 
 //#define from_proc_prt	log_printf_ex
 #define from_proc_prt	//
@@ -6423,6 +6424,7 @@ void init_fbp()
 	g_fbp = new TFreqByPcm ;
 	g_wp = new TWavePeriod ;
 	g_wp2 = new TWavePeriod2 ;
+	g_ms = new LongLongMS ;
 }
 //////////////////////////////////////////////////////////////////////
 long do_test_wave_proc( char *wav_file )

@@ -108,6 +108,10 @@ SOURCE=.\FreqByPcm.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\LongLongMS.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\StdAfx.cpp
 # ADD CPP /Yc"stdafx.h"
 # End Source File
@@ -158,6 +162,10 @@ SOURCE=.\FreqByPcm.h
 # Begin Source File
 
 SOURCE=.\GetFreqType.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\LongLongMS.h
 # End Source File
 # Begin Source File
 
