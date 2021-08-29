@@ -6419,12 +6419,44 @@ TFreqByPcm	*g_fbp ;
 TWavePeriod		*g_wp ;
 TWavePeriod2	*g_wp2 ;
 //////////////////////////////////////////////////////////////////////
+void test_LongLongMS()
+{
+	LONGLONG	ms_0, us_0, ns_0, ps_0 ;
+	LONGLONG	ms_1, us_1, ns_1, ps_1 ;
+	long	vv =0 ;
+
+	ms_0 = g_ms->GetMS() ;
+	us_0 = g_ms->GetUS() ;
+	ns_0 = g_ms->GetNS() ;
+	ps_0 = g_ms->GetPS() ;
+
+	Sleep( 2000 ) ;
+
+	vv ++ ;
+
+	ps_1 = g_ms->GetPS() ;
+	ns_1 = g_ms->GetNS() ;
+	us_1 = g_ms->GetUS() ;
+	ms_1 = g_ms->GetMS() ;
+
+log_prt( g_logFile, "test_LongLongMS() ms=%I64d us=%I64d ns=%I64d ps=%I64d\r\n", 
+					ms_1-ms_0,
+					us_1-us_0,
+					ns_1-ns_0,
+					ps_1-ps_0
+					) ;
+
+
+}
+//////////////////////////////////////////////////////////////////////
 void init_fbp()
 {
 	g_fbp = new TFreqByPcm ;
 	g_wp = new TWavePeriod ;
 	g_wp2 = new TWavePeriod2 ;
 	g_ms = new LongLongMS ;
+
+	test_LongLongMS() ;
 }
 //////////////////////////////////////////////////////////////////////
 long do_test_wave_proc( char *wav_file )
