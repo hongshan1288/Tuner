@@ -95,7 +95,7 @@ LONGLONG LongLongMS::GetUS0()
 {
 	LARGE_INTEGER	lv ;
 	QueryPerformanceCounter( &lv );
-	return ( 10000000*(lv.QuadPart-m_NS_Start.QuadPart)/m_Freq ) ;
+	return ( 1000000*(lv.QuadPart-m_NS_Start.QuadPart)/m_Freq ) ;
 }
 //////////////////////////////////////////////////////////////////////
 LONGLONG LongLongMS::GetNS0()
