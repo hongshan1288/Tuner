@@ -111,7 +111,6 @@ private:
 	void make_tj_data( long show_flag ) ;
 	void print_tj_data( char print_name[] ) ;
 
-
 	// make_next_data_by_zq
 	long	m_next_nn ;
 	long make_next_data_by_zq( double zq_len, double max_dx, long max_dyTot ) ;
@@ -126,6 +125,13 @@ private:
 
 	void set_BeginTime() ;
 	void set_EndTime() ;
+
+	// FreqZQ 
+	long	m_FreqZQ_mm, m_FreqZQ_nn ;
+	double	*m_FreqZQ ;
+
+	void set_FreqZQ_Len( long nn );
+	long push_FreqZQ( double zq_val ) ;
 
 public:
 	char	m_WaveFile[2048] ;
@@ -142,6 +148,9 @@ public:
 	double make_period_data(short *pcm_data, long pcm_len, long show_flag, long print_flag, long nCount ) ;
 
 	void show_period_data() ;
+	double	get_FreqZQ() ;
+
+	double make_last_FreqZQ(long show_flag, long print_flag ) ;
 
 };
 //////////////////////////////////////////////////////////////////////

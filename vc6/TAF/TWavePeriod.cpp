@@ -35,6 +35,10 @@ TWavePeriod::TWavePeriod()
 	m_zq_val = 1.2 ;
 	m_zq_dx = 1.2 ;
 
+	m_FreqZQ_mm = 0 ;
+	m_FreqZQ_nn = 0 ;
+	set_FreqZQ_Len( 200 ) ;
+
 	m_TimeLen = 0 ;
 
 }
@@ -640,7 +644,6 @@ void TWavePeriod::set_next_data( long comp_nn, double max_dx, long max_dyTot )
 	m = 0 ;
 	for ( i=m_PeriodDa_si+comp_nn; i<m_PeriodDa_mm-comp_nn; i++ )
 	{
-//log_prt( g_logFile, "set_next_data ================================= i=%-8ld m=%-8ld\r\n", i, m ) ;
 		f = set_NextPeriodData( i, comp_nn, max_dx, max_dyTot ) ;
 		if ( f<0 )
 		{
@@ -767,6 +770,8 @@ void TWavePeriod::clear_period_data()
 	m_next_si = 0 ;
 	m_next_ei = 0 ;
 
+	m_FreqZQ_mm = 0 ;
+
 }
 //////////////////////////////////////////////////////////////////////
 void TWavePeriod::reset_si_vars()
@@ -799,6 +804,9 @@ double TWavePeriod::make_period_data(short *pcm_data, long pcm_len, long show_fl
 {
 
 	set_BeginTime() ;
+
+	m_ShowFlag = show_flag ;
+	m_PrintFlag = print_flag ;
 
 	if ( show_flag>0 )
 		clear_waveForm_area() ;
@@ -841,7 +849,10 @@ log_prt( g_logFile, "03---make_period_data===========================m_PcmData_s
 	set_EndTime() ;
 
 	if ( m_TJDa_m==1 ) 
+	{
+		push_FreqZQ( m_TJDa[0].zq_val ) ;
 		return ( m_TJDa[0].zq_val ) ;
+	}
 	else
 		return ( 0 ) ;
 
@@ -1386,6 +1397,111 @@ log_prt( g_logFile, "make_next_data3 i0=%-8ld i1=%-8ld i2=%-8ld dy_tot=%-8ld max
 		return ( -1 ) ;
 }
 //////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+void TWavePeriod::set_FreqZQ_Len( long nn )
+{
+	double	*zq ;
+	zq = (double*)GlobalAlloc( GPTR, (nn)*sizeof(double) ) ;
+	if ( zq==NULL )
+		zq = zq ;
+	if ( m_FreqZQ_nn>0 && m_FreqZQ != NULL ) 
+	{
+		CopyMemory( zq, m_FreqZQ, m_FreqZQ_nn*sizeof(double) ) ;
+		FreeBuf( m_FreqZQ ) ;
+	}
+	m_FreqZQ = zq ;
+	m_FreqZQ_nn = nn ;
+}
+//////////////////////////////////////////////////////////////////////
+long TWavePeriod::push_FreqZQ( double zq_val )
+{
+	double	*zq ;
+
+	zq = m_FreqZQ ;
+	zq += m_FreqZQ_mm++ ;
+
+	*zq = zq_val ;
+
+	if ( m_FreqZQ_mm>=m_FreqZQ_nn )
+		set_FreqZQ_Len( m_FreqZQ_nn+200 ) ;
+
+	return ( m_FreqZQ_mm-1 ) ;
+}
+//////////////////////////////////////////////////////////////////////
+double TWavePeriod::get_FreqZQ()
+{
+	long	i ;
+	double	vv ;
+	vv = 0 ;
+	for ( i=0; i<m_FreqZQ_mm; i++ )
+	{
+		vv += m_FreqZQ[i] ;
+	}
+	vv /= m_FreqZQ_mm ;
+	return ( vv ) ;
+}
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+double TWavePeriod::make_last_FreqZQ(long show_flag, long print_flag )
+{
+
+	set_BeginTime() ;
+
+	m_ShowFlag = show_flag ;
+	m_PrintFlag = print_flag ;
+
+	if ( show_flag>0 )
+		clear_waveForm_area() ;
+
+	long	mm = m_PcmData_mm ;
+	clear_period_data() ;
+	m_PcmData_mm = mm ;
+
+	if ( show_flag>0 )
+		show_pcm_data( m_PcmData, m_PcmData_mm, RGB(10,50,10), RGB(20,80,20) ) ;
+
+if ( print_flag>=0 )
+log_prt( g_logFile, "00---make_last_FreqZQ1===========================m_PcmData_si=%-8ld m_PcmData_mm=%-8ld m_PeriodDa_si=%-8ld  m_PeriodDa_mm=%-8ld m_next_si=%-8ld m_next_ei=%-8ld\r\n", m_PcmData_si, m_PcmData_mm, m_PeriodDa_si, m_PeriodDa_mm, m_next_si, m_next_ei ) ;
+
+	make_PeriodData() ;
+
+	if ( show_flag>0 )
+		show_PeriodData( 0, 5, RGB(80,0,50), 0, 0 ) ;
+
+if ( print_flag>=0 )
+log_prt( g_logFile, "01---make_last_FreqZQ1===========================m_PcmData_si=%-8ld m_PcmData_mm=%-8ld m_PeriodDa_si=%-8ld  m_PeriodDa_mm=%-8ld m_next_si=%-8ld m_next_ei=%-8ld\r\n", m_PcmData_si, m_PcmData_mm, m_PeriodDa_si, m_PeriodDa_mm, m_next_si, m_next_ei ) ;
+
+	remove_ShortPeriodData( 1-0.618 ) ; // remove too short Period data
+	make_PeriodYY() ;
+
+if ( print_flag>=0 )
+log_prt( g_logFile, "02---make_last_FreqZQ1===========================m_PcmData_si=%-8ld m_PcmData_mm=%-8ld m_PeriodDa_si=%-8ld  m_PeriodDa_mm=%-8ld m_next_si=%-8ld m_next_ei=%-8ld\r\n", m_PcmData_si, m_PcmData_mm, m_PeriodDa_si, m_PeriodDa_mm, m_next_si, m_next_ei ) ;
+
+	make_next_data(1, 1, 5) ;
+
+if ( print_flag>=0 )
+log_prt( g_logFile, "03---make_last_FreqZQ1===========================m_PcmData_si=%-8ld m_PcmData_mm=%-8ld m_PeriodDa_si=%-8ld  m_PeriodDa_mm=%-8ld m_next_si=%-8ld m_next_ei=%-8ld\r\n", m_PcmData_si, m_PcmData_mm, m_PeriodDa_si, m_PeriodDa_mm, m_next_si, m_next_ei ) ;
+
+	if ( show_flag>0 )
+		show_PeriodData( 0, 5, RGB(20,50,20), RGB(10,10,100), RGB(100,10,10) ) ;
+
+	make_tj_data(print_flag) ;
+
+	if ( show_flag>0 )
+		SaveToBmpFile( m_WaveFile, 10000 ) ;
+
+	set_EndTime() ;
+
+	if ( m_TJDa_m==1 ) 
+	{
+		return ( m_TJDa[0].zq_val ) ;
+	}
+	else
+		return ( 0 ) ;
+
+}
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////

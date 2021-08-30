@@ -6456,7 +6456,7 @@ void init_fbp()
 	g_wp2 = new TWavePeriod2 ;
 	g_ms = new LongLongMS ;
 
-	test_LongLongMS() ;
+//	test_LongLongMS() ;
 }
 //////////////////////////////////////////////////////////////////////
 long do_test_wave_proc( char *wav_file )
@@ -6509,6 +6509,19 @@ log_prt( g_logFile, "=======================================================peri
 			clear_waveForm_area() ;
 			g_wp2->show_period_data() ;
 			SaveToBmpFile( g_wp2->m_WaveFile, nCount ) ;
+
+			double	zq1, zq2 ;
+
+			zq1 = g_wp->get_FreqZQ() ;
+			zq2 = g_wp2->get_FreqZQ() ;
+
+log_prt( g_logFile, "last FreqZQ===================zq1=%-8.3lf zq2=%-8.3f diff=%-8.3lf\r\n", zq1, zq2, fabs(zq1-zq2) ) ;
+
+			zq1 = g_wp->make_last_FreqZQ(0,1) ;
+			zq2 = g_wp2->make_last_FreqZQ(0,1) ;
+
+log_prt( g_logFile, "make_last_FreqZQ===================zq1=%-8.3lf zq2=%-8.3f diff=%-8.3lf tm1=%-8.3lf tm2=%-8.3lf\r\n", zq1, zq2, fabs(zq1-zq2), g_wp->m_TimeLen, g_wp2->m_TimeLen ) ;
+
 		}
 	}
 	__finally

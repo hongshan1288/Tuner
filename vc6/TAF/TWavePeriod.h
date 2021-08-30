@@ -127,6 +127,14 @@ private:
 	void set_BeginTime() ;
 	void set_EndTime() ;
 
+	// FreqZQ 
+	long	m_FreqZQ_mm, m_FreqZQ_nn ;
+	double	*m_FreqZQ ;
+
+	void set_FreqZQ_Len( long nn );
+	long push_FreqZQ( double zq_val ) ;
+
+	long	m_PrintFlag, m_ShowFlag ;
 
 public:
 	char	m_WaveFile[2048] ;
@@ -143,6 +151,9 @@ public:
 	double make_period_data(short *pcm_data, long pcm_len, long show_flag, long print_flag, long nCount ) ;
 
 	void show_period_data() ;
+	double	get_FreqZQ() ;
+
+	double make_last_FreqZQ(long show_flag, long print_flag ) ;
 
 };
 //////////////////////////////////////////////////////////////////////
