@@ -735,14 +735,9 @@ log_prt( g_logFile, "03---make_period_data===========================m_PcmData_s
 
 	set_EndTime() ;
 
-	if ( m_TJDa_m==1 ) 
-	{
-		push_FreqZQ( m_TJDa[0].zq_val ) ;
-		return ( m_TJDa[0].zq_val ) ;
-	}
-	else
-		return ( 0 ) ;
+	set_Freq_vars() ;
 
+	return ( m_ZQ ) ;
 }
 //////////////////////////////////////////////////////////////////////
 void TWavePeriod2::show_period_data()
@@ -1329,6 +1324,9 @@ double TWavePeriod2::get_FreqZQ()
 		vv += m_FreqZQ[i] ;
 	}
 	vv /= m_FreqZQ_mm ;
+
+	m_Freq = m_Samples/vv ;
+
 	return ( vv ) ;
 }
 //////////////////////////////////////////////////////////////////////
@@ -1376,15 +1374,30 @@ log_prt( g_logFile, "03---make_last_FreqZQ2===========================m_PcmData_
 
 	set_EndTime() ;
 
-	if ( m_TJDa_m==1 ) 
-	{
-		return ( m_TJDa[0].zq_val ) ;
-	}
-	else
-		return ( 0 ) ;
+	set_Freq_vars() ;
 
+	return ( m_ZQ ) ;
 }
 //////////////////////////////////////////////////////////////////////
+void TWavePeriod2::set_Freq_vars()
+{
+	if ( m_TJDa_m==1 ) 
+	{
+		m_ZQ = m_TJDa[0].zq_val ;
+		m_Freq = m_Samples/m_ZQ ;
+		push_FreqZQ( m_ZQ ) ;
+	}
+	else
+	{
+		m_ZQ = 0 ;
+		m_Freq = 0 ;
+	}
+}
+//////////////////////////////////////////////////////////////////////
+void TWavePeriod2::set_Samples( long samples )
+{
+	m_Samples = samples ;
+}
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////

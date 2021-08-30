@@ -6456,6 +6456,8 @@ void init_fbp()
 	g_wp2 = new TWavePeriod2 ;
 	g_ms = new LongLongMS ;
 
+	g_wp2->set_Samples( 44100 ) ;
+
 //	test_LongLongMS() ;
 }
 //////////////////////////////////////////////////////////////////////
@@ -6477,6 +6479,7 @@ long do_test_wave_proc( char *wav_file )
 	pcm_data = (short*)GlobalAlloc( GPTR, nBytes ) ;
 	strcpy( g_wp->m_WaveFile, wav_file ) ;
 	sprintf( g_wp2->m_WaveFile, "%s.2", wav_file ) ;
+
 	g_wp->clear_period_data() ;
 	g_wp2->clear_period_data() ;
 	__try
@@ -6490,13 +6493,13 @@ long do_test_wave_proc( char *wav_file )
 			period_f1 = period_f2 = 0 ;
 			if ( nRead>0 ) 
 			{
-				period_f1 = g_wp->make_period_data( (short*)pcm_data, nRead/2, show_flag, print_flag, nCount ) ;
-				if ( period_f1<=0 )
-					period_f1 = 0 ;
+//				period_f1 = g_wp->make_period_data( (short*)pcm_data, nRead/2, show_flag, print_flag, nCount ) ;
+//				if ( period_f1<=0 )
+//					period_f1 = 0 ;
 				period_f2 = g_wp2->make_period_data( (short*)pcm_data, nRead/2, show_flag, print_flag, nCount ) ;
 				if ( period_f2<=0 )
 					period_f2 = 0 ;
-log_prt( g_logFile, "=======================================================period_f1=%-8.3lf(%-8.3lf) period_f2=%-8.3f(%-8.3lf) nCount=%-8ld\r\n", period_f1, g_wp->m_TimeLen, period_f2, g_wp2->m_TimeLen, nCount ) ;
+log_prt( g_logFile, "=======================================================period_f1=%-8.3lf(%-8.3lf) period_f2=%-8.3lf[%1.3f] (%-8.3lf) nCount=%-8ld\r\n", period_f1, g_wp->m_TimeLen, period_f2, g_wp2->m_Freq, g_wp2->m_TimeLen, nCount ) ;
 			}
 			nOff += nRead ;
 			nSize -= nRead ;
@@ -6511,16 +6514,17 @@ log_prt( g_logFile, "=======================================================peri
 			SaveToBmpFile( g_wp2->m_WaveFile, nCount ) ;
 
 			double	zq1, zq2 ;
+			zq1 = 0 ;
+			zq2 = 0 ;
 
-			zq1 = g_wp->get_FreqZQ() ;
+//			zq1 = g_wp->get_FreqZQ() ;
 			zq2 = g_wp2->get_FreqZQ() ;
 
-log_prt( g_logFile, "last FreqZQ===================zq1=%-8.3lf zq2=%-8.3f diff=%-8.3lf\r\n", zq1, zq2, fabs(zq1-zq2) ) ;
+log_prt( g_logFile, "last FreqZQ===================zq1=%-8.3lf zq2=%-8.3lf[%1.3lf] diff=%-8.3lf\r\n", zq1, zq2, g_wp2->m_Freq, fabs(zq1-zq2) ) ;
 
-			zq1 = g_wp->make_last_FreqZQ(0,1) ;
+//			zq1 = g_wp->make_last_FreqZQ(0,1) ;
 			zq2 = g_wp2->make_last_FreqZQ(0,1) ;
-
-log_prt( g_logFile, "make_last_FreqZQ===================zq1=%-8.3lf zq2=%-8.3f diff=%-8.3lf tm1=%-8.3lf tm2=%-8.3lf\r\n", zq1, zq2, fabs(zq1-zq2), g_wp->m_TimeLen, g_wp2->m_TimeLen ) ;
+log_prt( g_logFile, "make_last_FreqZQ===================zq1=%-8.3lf zq2=%-8.3lf(%-1.3lf) diff=%-8.3lf tm1=%-8.3lf tm2=%-8.3lf\r\n", zq1, zq2, g_wp2->m_Freq, fabs(zq1-zq2), g_wp->m_TimeLen, g_wp2->m_TimeLen ) ;
 
 		}
 	}
