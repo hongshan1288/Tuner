@@ -5,11 +5,10 @@
 #include "TAF.h"
 #include "AudioProc.h"
 #include "ComUtils.h"
-#include "FreqByPcm.h"
 #include "TWavePeriod2.h"
 #include "LongLongMS.h"
+#include "DoDrawUtils.h"
 
-//#define from_proc_prt	log_printf_ex
 #define from_proc_prt	//
 
 #define MAX_PCM_DIV		10
@@ -6412,7 +6411,6 @@ void do_new_show_vars_proc()
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
-TFreqByPcm	*g_fbp ;
 TWavePeriod2	*g_wp2 ;
 //////////////////////////////////////////////////////////////////////
 void test_LongLongMS()
@@ -6447,82 +6445,15 @@ log_prt( g_logFile, "test_LongLongMS() ms=%I64d us=%I64d ns=%I64d ps=%I64d\r\n",
 //////////////////////////////////////////////////////////////////////
 void init_fbp()
 {
-	g_fbp = new TFreqByPcm ;
 	g_wp2 = new TWavePeriod2 ;
 	g_ms = new LongLongMS ;
+
+	m_DCFlag = false ;
+	m_MemFlag = true ;
 
 	g_wp2->set_Samples( 44100 ) ;
 
 //	test_LongLongMS() ;
-}
-//////////////////////////////////////////////////////////////////////
-long do_test_wave_proc( char *wav_file )
-{
-	long	nRead, nBytes, nSize, nOff, nCount ;
-	long	show_flag, print_flag ;
-	double	period_f2 ;
-	short	*pcm_data ;
-
-	nOff = 44 ;
-	nSize = Get_FileSize( wav_file ) ;
-	strcpy( g_wavFile, wav_file ) ;
-
-	nSize -= nOff ;
-
-	nBytes = 8820 ;
-
-	sprintf( g_wp2->m_WaveFile, "%s.2", wav_file ) ;
-	g_wp2->clear_period_data() ;
-
-	pcm_data = (short*)GlobalAlloc( GPTR, nBytes ) ;
-
-	__try
-	{
-		nCount = 0 ;
-		show_flag = 1 ;
-		print_flag = -1 ;
-		while ( nSize>0 )
-		{
-			nRead = ReadBufFromFile( wav_file, pcm_data, nOff, nBytes ) ;
-			period_f2 = 0 ;
-			if ( nRead>0 ) 
-			{
-				period_f2 = g_wp2->make_period_data( (short*)pcm_data, nRead/2, show_flag, print_flag, nCount ) ;
-				if ( period_f2<=0 )
-					period_f2 = 0 ;
-log_prt( g_logFile, "=======================================================period_f2=%-8.3lf[%1.3f] (%-8.3lf) nCount=%-8ld\r\n", period_f2, g_wp2->m_Freq, g_wp2->m_TimeLen, nCount ) ;
-			}
-			nOff += nRead ;
-			nSize -= nRead ;
-			nCount ++ ;
-//			if ( nCount>0 )
-//				break ;
-		}
-		if ( show_flag==0 )
-		{
-			clear_waveForm_area() ;
-			g_wp2->show_period_data() ;
-			SaveToBmpFile( g_wp2->m_WaveFile, nCount ) ;
-
-		}
-		double	zq1, zq2 ;
-		zq1 = 0 ;
-		zq2 = 0 ;
-
-//			zq1 = g_wp->get_FreqZQ() ;
-		zq2 = g_wp2->get_FreqZQ() ;
-log_prt( g_logFile, "last FreqZQ===================zq1=%-8.3lf zq2=%-8.3lf[%1.3lf] diff=%-8.3lf\r\n", zq1, zq2, g_wp2->m_Freq, fabs(zq1-zq2) ) ;
-
-//			zq1 = g_wp->make_last_FreqZQ(0,1) ;
-//			zq2 = g_wp2->make_last_FreqZQ(0,1) ;
-//log_prt( g_logFile, "make_last_FreqZQ===================zq1=%-8.3lf zq2=%-8.3lf(%-1.3lf) diff=%-8.3lf tm1=%-8.3lf tm2=%-8.3lf\r\n", zq1, zq2, g_wp2->m_Freq, fabs(zq1-zq2), g_wp->m_TimeLen, g_wp2->m_TimeLen ) ;
-
-	}
-	__finally
-	{
-		FreeBuf( pcm_data ) ;
-	}
-	return ( 0 ) ;
 }
 //////////////////////////////////////////////////////////////////////
 extern long do_test4_proc( char *wav_file, long note_show_flag ) ;
@@ -6535,10 +6466,8 @@ long test_proc( char *DataValue )
 		sscanf( g_waveForm_rect_vars, "%lu %lu", &g_waveForm_aa, &g_waveForm_bb ) ;
 		do_task( 101, "" ) ;
 		make_pan_dc_memory_buf( g_waveForm_DC, g_waveForm_aa, g_waveForm_bb ) ;
-		g_fbp->make_xy_buf( g_waveForm_aa ) ;
 	}
 
-//	do_test_wave_proc( DataValue ) ;
 	do_test4_proc( DataValue, 2 ) ;
 
 	return ( 0 ) ;
@@ -6612,7 +6541,6 @@ void test4_proc( char *DataValue )
 		sscanf( g_waveForm_rect_vars, "%lu %lu", &g_waveForm_aa, &g_waveForm_bb ) ;
 		do_task( 101, "" ) ;
 		make_pan_dc_memory_buf( g_waveForm_DC, g_waveForm_aa, g_waveForm_bb ) ;
-		g_fbp->make_xy_buf( g_waveForm_aa ) ;
 	}
 
 	do_test4_proc( DataValue, 0 ) ;

@@ -104,10 +104,6 @@ SOURCE=.\DoDrawUtils.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\FreqByPcm.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=.\LongLongMS.cpp
 # End Source File
 # Begin Source File
@@ -122,14 +118,6 @@ SOURCE=.\TAF.cpp
 # Begin Source File
 
 SOURCE=.\TAF.def
-# End Source File
-# Begin Source File
-
-SOURCE=.\TJDataProc.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\TMakeZQData_1.cpp
 # End Source File
 # Begin Source File
 
@@ -153,14 +141,6 @@ SOURCE=.\DoDrawUtils.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\FreqByPcm.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\GetFreqType.h
-# End Source File
-# Begin Source File
-
 SOURCE=.\LongLongMS.h
 # End Source File
 # Begin Source File
@@ -170,14 +150,6 @@ SOURCE=.\StdAfx.h
 # Begin Source File
 
 SOURCE=.\TAF.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\TJDataProc.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\TMakeZQData_1.h
 # End Source File
 # Begin Source File
 
