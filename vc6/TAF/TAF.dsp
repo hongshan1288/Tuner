@@ -185,15 +185,7 @@ SOURCE=.\TMakeZQData_1.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\TWavePeriod.h
-# End Source File
-# Begin Source File
-
 SOURCE=.\TWavePeriod2.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\WavePeriodDT.h
 # End Source File
 # End Group
 # Begin Group "Resource Files"
