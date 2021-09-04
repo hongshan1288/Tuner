@@ -133,10 +133,6 @@ SOURCE=.\TMakeZQData_1.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\TWavePeriod.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=.\TWavePeriod2.cpp
 # End Source File
 # End Group
