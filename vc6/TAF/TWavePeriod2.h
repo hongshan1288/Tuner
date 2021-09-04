@@ -35,12 +35,12 @@ private:
 
 
 	// pcm data
-	double	m_MinVV ;
 	long	m_FlatVV ;
 	long	m_DC_line_color ;
 
 	short	*m_PcmData ;
 	long	m_PcmData_si, m_PcmData_mm, m_PcmData_nn ;
+
 	void make_flat_data( short *pcm_data, long pcm_len ) ;
 	void push_PcmData(short *pcm_data, long pcm_len) ;
 
@@ -156,15 +156,16 @@ public:
 	TWavePeriod2();
 	virtual ~TWavePeriod2();
 
+	void set_Samples( long samples ) ;
+	void set_flat_vars( long flat_vv ) ;
+	void set_pcm_buf( long pcm_buf_seconds ) ;
+
 	void clear_period_data() ;
 	double make_period_data(short *pcm_data, long pcm_len, long show_flag, long print_flag, long nCount ) ;
-
 	void show_period_data() ;
-	double	get_FreqZQ() ;
 
-	void	set_Samples( long samples ) ;
-
-	double make_last_FreqZQ(long show_flag, long print_flag ) ;
+	double	get_AllFreqZQ() ;
+	double make_FreqZQ(long show_flag, long print_flag ) ;
 
 };
 //////////////////////////////////////////////////////////////////////

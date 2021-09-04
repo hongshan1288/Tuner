@@ -6515,8 +6515,8 @@ log_prt( g_logFile, "=======================================================zq=%
 		double	zq2 ;
 //		zq2 = g_wp2->get_FreqZQ() ;
 //log_prt( g_logFile, "last FreqZQ===================zq2=%-8.3lf[%1.3lf]\r\n", zq2, g_wp2->m_Freq ) ;
-		zq2 = g_wp2->make_last_FreqZQ(0,-1) ;
-log_prt( g_logFile, "make_last_FreqZQ===================zq2=%-8.3lf(%-1.3lf) tm2=%-8.3lf\r\n", zq2, g_wp2->m_Freq, g_wp2->m_TimeLen ) ;
+		zq2 = g_wp2->make_FreqZQ(0,-1) ;
+log_prt( g_logFile, "make_FreqZQ===================zq2=%-8.3lf(%-1.3lf) tm2=%-8.3lf\r\n", zq2, g_wp2->m_Freq, g_wp2->m_TimeLen ) ;
 
 		if ( note_show_flag>0 )
 			noteInfo_proc( g_wp2->m_Freq, 1 ) ;

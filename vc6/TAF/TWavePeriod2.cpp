@@ -12,37 +12,57 @@
 TWavePeriod2::TWavePeriod2()
 {
 
-	m_MinVV = 1000 ;
-	m_FlatVV = 3200/8 ; // 平滑值
-	m_DC_line_color = RGB( 80, 10, 10 ) ;
-
-	m_PeriodDa_mm = 0 ;
-	m_PeriodDa_nn = 0 ;
-	set_PeriodDa_Len( 500 ) ;
-
-	m_PcmData_nn = 30 * 44100 ; // 30秒单声道的缓冲区
-	m_PcmData = (short*)GlobalAlloc(GPTR, m_PcmData_nn*sizeof(short) ) ;
-	m_PcmData_mm = 0 ;
-	m_PcmData_si = 0 ;
-
-
+	// for TJ
 	m_TJDa_n = 0 ;
 	m_zq_val = 1.2 ;
 	m_zq_dx = 1.2 ;
 
+	// Period Data
+	m_PeriodDa_mm = 0 ;
+	m_PeriodDa_nn = 0 ;
+	set_PeriodDa_Len( 500 ) ;
+
+	// FreqZQ Data
 	m_FreqZQ_mm = 0 ;
 	m_FreqZQ_nn = 0 ;
 	set_FreqZQ_Len( 200 ) ;
 
+	m_DC_line_color = RGB( 80, 10, 10 ) ;
 	m_TimeLen = 0 ;
+
+	set_flat_vars( 3200/8 ) ;  // 平滑值
+	set_Samples( 44100 ) ;
+	set_pcm_buf( 30 ) ; // 30秒的单声道的缓冲区
 
 }
 //////////////////////////////////////////////////////////////////////
 TWavePeriod2::~TWavePeriod2()
 {
+	FreeBuf( m_PcmData ) ;
+	FreeBuf( m_FreqZQ ) ;
 	FreeBuf( m_PeriodDa ) ;
 }
 //////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+void TWavePeriod2::set_Samples( long samples )
+{
+	m_Samples = samples ;
+}
+//////////////////////////////////////////////////////////////////////
+void TWavePeriod2::set_pcm_buf( long pcm_buf_seconds )
+{
+	if ( m_PcmData!=NULL )
+		FreeBuf( m_PcmData ) ;
+	m_PcmData_nn = pcm_buf_seconds * m_Samples ; // 30秒单声道的缓冲区
+	m_PcmData = (short*)GlobalAlloc(GPTR, m_PcmData_nn*sizeof(short) ) ;
+	m_PcmData_mm = 0 ;
+	m_PcmData_si = 0 ;
+}
+//////////////////////////////////////////////////////////////////////
+void TWavePeriod2::set_flat_vars( long flat_vv )
+{
+	m_FlatVV = flat_vv ;
+}
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
@@ -702,6 +722,8 @@ if ( print_flag>=0 )
 log_prt( g_logFile, "00---make_period_data===========================pcm_len=%-8ld show_flag=%-8ld print_flag=%-8ld nCount=%-8ld\r\n", pcm_len, show_flag, print_flag, nCount ) ;
 
 	push_PcmData( pcm_data, pcm_len ) ;
+
+
 	if ( show_flag>0 )
 		show_pcm_data( m_PcmData, m_PcmData_mm, RGB(10,50,10), RGB(20,80,20) ) ;
 
@@ -1314,7 +1336,7 @@ long TWavePeriod2::push_FreqZQ( double zq_val )
 	return ( m_FreqZQ_mm-1 ) ;
 }
 //////////////////////////////////////////////////////////////////////
-double TWavePeriod2::get_FreqZQ()
+double TWavePeriod2::get_AllFreqZQ()
 {
 	long	i ;
 	double	vv ;
@@ -1329,7 +1351,7 @@ double TWavePeriod2::get_FreqZQ()
 }
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
-double TWavePeriod2::make_last_FreqZQ(long show_flag, long print_flag )
+double TWavePeriod2::make_FreqZQ(long show_flag, long print_flag )
 {
 
 	set_BeginTime() ;
@@ -1390,11 +1412,6 @@ void TWavePeriod2::set_Freq_vars()
 		m_ZQ = 0 ;
 		m_Freq = 0 ;
 	}
-}
-//////////////////////////////////////////////////////////////////////
-void TWavePeriod2::set_Samples( long samples )
-{
-	m_Samples = samples ;
 }
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
