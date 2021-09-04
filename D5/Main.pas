@@ -313,6 +313,7 @@ begin
 
   Panel_WaveForm.Top := -20 ;
   Panel_WaveForm.Left := -20 ;
+//  Panel_WaveForm.Align := alClient ;
 
   Panel_DataInfo.Left := f_UI_BorderWidth ;
   Panel_DataInfo.DoubleBuffered := true ;
@@ -522,7 +523,7 @@ begin
   
   bb := Panel_WaveFormBase.Parent.Height - ( bh+ba+ba div 2 ) ;
 
-  bb := bb * 2 ;
+//  bb := bb * 2 ;
 
   Panel_WaveFormBase.SetBounds( Panel_WaveFormBase.Left,
                                 Panel_WaveFormBase.Top,

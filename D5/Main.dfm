@@ -150,7 +150,7 @@ object frmMain: TfrmMain
         OnScroll = ScrollBarWaveFormScroll
       end
       object Panel_WaveForm: TMyPanel0
-        Left = 153
+        Left = 169
         Top = 29
         Width = 10
         Height = 10
