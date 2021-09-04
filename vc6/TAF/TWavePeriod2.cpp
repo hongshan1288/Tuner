@@ -710,7 +710,7 @@ log_prt( g_logFile, "01---make_period_data===========================m_PcmData_s
 
 	make_PeriodData() ;
 
-	if ( show_flag>0 )
+	if ( show_flag>1 )
 		show_PeriodData( 0, 5, RGB(80,0,50), 0, 0 ) ;
 
 	remove_ShortPeriodData( 1-0.618 ) ; // remove too short Period data
@@ -723,7 +723,7 @@ log_prt( g_logFile, "02---make_period_data===========================m_PcmData_s
 if ( print_flag>=0 )
 log_prt( g_logFile, "03---make_period_data===========================m_PcmData_si=%-8ld m_PcmData_mm=%-8ld m_PeriodDa_si=%-8ld  m_PeriodDa_mm=%-8ld m_next_si=%-8ld m_next_ei=%-8ld\r\n", m_PcmData_si, m_PcmData_mm, m_PeriodDa_si, m_PeriodDa_mm, m_next_si, m_next_ei ) ;
 
-	if ( show_flag>0 )
+	if ( show_flag>2 )
 		show_PeriodData( 0, 5, RGB(20,50,20), RGB(10,10,100), RGB(100,10,10) ) ;
 
 	make_tj_data(print_flag) ;
@@ -1320,11 +1320,9 @@ double TWavePeriod2::get_FreqZQ()
 	double	vv ;
 	vv = 0 ;
 	for ( i=0; i<m_FreqZQ_mm; i++ )
-	{
 		vv += m_FreqZQ[i] ;
-	}
-	vv /= m_FreqZQ_mm ;
 
+	vv /= m_FreqZQ_mm ;
 	m_Freq = m_Samples/vv ;
 
 	return ( vv ) ;
