@@ -2,7 +2,8 @@ program Tuner;
 
 uses
   Forms,
-  Main in 'Main.pas' {frmMain};
+  Main in 'Main.pas' {frmMain},
+  utFreqCalc in 'utFreqCalc.pas';
 
 {$R *.RES}
 
