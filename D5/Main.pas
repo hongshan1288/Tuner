@@ -86,7 +86,8 @@ type
     procedure Reset_ScrollBarVar;
     procedure ResizeIamge_Proc;
     procedure SetImageSizeVars;
-    procedure do_show_freq(sv: integer);
+    procedure freq_and_pcm_event(sv: integer);
+    procedure show_freq(freq_ss: string);
     { Private declarations }
   public
     { Public declarations }
@@ -125,16 +126,17 @@ begin
   Image_WaveForm.Picture.LoadFromFile( bmpFile ) ;
 end ;
 ////////////////////////////////////////////////////////////////////////////////
-procedure TfrmMain.do_show_freq( sv: integer ) ;
+procedure TfrmMain.freq_and_pcm_event( sv: integer ) ;
 var
-  dFreq : double ;
-  bmpFile : string ;
+  pp    : pchar ;
+  sm,
+  ss    : string ;
 begin
-  dFreq := sv ;
-  dFreq := dFreq*10000 ;
-  if ( dFreq>0 ) then begin
-    dFreq := 0 ;
-  end ;
+  pp := pchar(sv) ;
+  ss := pp ;
+  sm := get_ss_name( ss, ',' ) ; // 频率
+  show_freq( sm ) ;
+  ss := get_ss_value( ss, ',' ) ;
 end ;
 ////////////////////////////////////////////////////////////////////////////////
 procedure TfrmMain.FireEvent( sn, sv: integer );
@@ -145,10 +147,7 @@ begin
     do_save_waveForm_bmpFile( sv ) ;
 
   end else if ( sn=5002 ) then begin // 检测频率
-    do_show_freq( sv ) ;
-
-  end else if ( sn=5003 ) then begin // 检测频率
-    do_show_freq( sv ) ;
+    freq_and_pcm_event( sv ) ;
 
   end else if ( sn=2011 ) then begin //音频打开标志
     f_audio_open_flag := sv ;
@@ -807,6 +806,15 @@ begin
   do_all_wave_test ;
 //  do_all_wave_test2 ;
 end;
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+procedure TfrmMain.show_freq( freq_ss: string );
+begin
+end ;
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
