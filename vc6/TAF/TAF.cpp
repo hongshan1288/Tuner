@@ -6456,27 +6456,10 @@ void init_fbp()
 //	test_LongLongMS() ;
 }
 //////////////////////////////////////////////////////////////////////
-extern long do_test4_proc( char *wav_file, long note_show_flag ) ;
-//////////////////////////////////////////////////////////////////////
-long test_proc( char *DataValue )
-{
-
-	if ( do_task( 201, "" )>0 )
-	{
-		sscanf( g_waveForm_rect_vars, "%lu %lu", &g_waveForm_aa, &g_waveForm_bb ) ;
-		do_task( 101, "" ) ;
-		make_pan_dc_memory_buf( g_waveForm_DC, g_waveForm_aa, g_waveForm_bb ) ;
-	}
-
-	do_test4_proc( DataValue, 2 ) ;
-
-	return ( 0 ) ;
-}
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////
-long do_test4_proc( char *wav_file, long note_show_flag )
+long do_test4_proc( char *wav_file, long note_show_flag, long pop_event )
 {
 	long	nRead, nBytes, nSize, nOff, nCount ;
 	long	show_flag, print_flag ;
@@ -6504,6 +6487,12 @@ long do_test4_proc( char *wav_file, long note_show_flag )
 			if ( nRead>0 ) 
 			{
 				g_wp2->make_period_data( (short*)pcm_data, nRead/2, show_flag, print_flag, nCount ) ;
+				if ( pop_event>0 )
+				{
+					PopEvent( 5002, (long)g_wp2->m_PcmData, "pop_event_pcm_data()" ) ;
+					PopEvent( 5003, (long)(10000*g_wp2->m_Freq), "pop_event_pcm_data()" ) ;
+				}
+
 				if ( note_show_flag>1 )
 					noteInfo_proc( g_wp2->m_Freq, 1 ) ;
 log_prt( g_logFile, "=======================================================zq=%-8.3lf[%1.3f] (%-8.3lf) nCount=%-8ld\r\n", g_wp2->m_ZQ, g_wp2->m_Freq, g_wp2->m_TimeLen, nCount ) ;
@@ -6518,6 +6507,10 @@ log_prt( g_logFile, "=======================================================zq=%
 		zq2 = g_wp2->make_FreqZQ(0,-1) ;
 log_prt( g_logFile, "make_FreqZQ===================zq2=%-8.3lf(%-1.3lf) tm2=%-8.3lf\r\n", zq2, g_wp2->m_Freq, g_wp2->m_TimeLen ) ;
 
+		if ( pop_event>0 )
+		{
+			PopEvent( 5003, (long)(10000*g_wp2->m_Freq), "pop_event_pcm_data()" ) ;
+		}
 		if ( note_show_flag>0 )
 			noteInfo_proc( g_wp2->m_Freq, 1 ) ;
 
@@ -6528,6 +6521,24 @@ log_prt( g_logFile, "make_FreqZQ===================zq2=%-8.3lf(%-1.3lf) tm2=%-8.
 	}
 	return ( 0 ) ;
 }
+//////////////////////////////////////////////////////////////////////
+long test_proc( char *DataValue )
+{
+
+	if ( do_task( 201, "" )>0 )
+	{
+		sscanf( g_waveForm_rect_vars, "%lu %lu", &g_waveForm_aa, &g_waveForm_bb ) ;
+		do_task( 101, "" ) ;
+		make_pan_dc_memory_buf( g_waveForm_DC, g_waveForm_aa, g_waveForm_bb ) ;
+	}
+
+	do_test4_proc( DataValue, 0, 1 ) ;
+
+	return ( 0 ) ;
+}
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 void push_freq_value()
 {
@@ -6543,7 +6554,7 @@ void test4_proc( char *DataValue )
 		make_pan_dc_memory_buf( g_waveForm_DC, g_waveForm_aa, g_waveForm_bb ) ;
 	}
 
-	do_test4_proc( DataValue, 0 ) ;
+	do_test4_proc( DataValue, 0, 1 ) ;
 
 	push_freq_value() ;
 

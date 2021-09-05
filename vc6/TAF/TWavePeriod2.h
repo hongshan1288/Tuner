@@ -38,7 +38,6 @@ private:
 	long	m_FlatVV ;
 	long	m_DC_line_color ;
 
-	short	*m_PcmData ;
 	long	m_PcmData_si, m_PcmData_mm, m_PcmData_nn ;
 
 	void make_flat_data( short *pcm_data, long pcm_len ) ;
@@ -150,6 +149,7 @@ public:
 	char	m_WaveFile[2048] ;
 	double	m_ZQ, m_Freq ;
 	double	m_TimeLen ;	
+	short	*m_PcmData ;
 
 public:
 

@@ -86,6 +86,7 @@ type
     procedure Reset_ScrollBarVar;
     procedure ResizeIamge_Proc;
     procedure SetImageSizeVars;
+    procedure do_show_freq(sv: integer);
     { Private declarations }
   public
     { Public declarations }
@@ -124,12 +125,30 @@ begin
   Image_WaveForm.Picture.LoadFromFile( bmpFile ) ;
 end ;
 ////////////////////////////////////////////////////////////////////////////////
+procedure TfrmMain.do_show_freq( sv: integer ) ;
+var
+  dFreq : double ;
+  bmpFile : string ;
+begin
+  dFreq := sv ;
+  dFreq := dFreq*10000 ;
+  if ( dFreq>0 ) then begin
+    dFreq := 0 ;
+  end ;
+end ;
+////////////////////////////////////////////////////////////////////////////////
 procedure TfrmMain.FireEvent( sn, sv: integer );
 begin
   if ( sn=0 ) then begin
 
   end else if ( sn=5001 ) then begin // 保存 waveForm BMP
     do_save_waveForm_bmpFile( sv ) ;
+
+  end else if ( sn=5002 ) then begin // 检测频率
+    do_show_freq( sv ) ;
+
+  end else if ( sn=5003 ) then begin // 检测频率
+    do_show_freq( sv ) ;
 
   end else if ( sn=2011 ) then begin //音频打开标志
     f_audio_open_flag := sv ;
