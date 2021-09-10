@@ -6515,8 +6515,9 @@ log_prt( g_logFile, "make_FreqZQ===================zq2=%-8.3lf(%-1.3lf) tm2=%-8.
 
 		if ( pop_event>0 )
 		{
-			pop_period_event( g_wp2->m_Freq, nRead, g_wp2->m_PcmData ) ;
+			pop_period_event( g_wp2->m_Freq, g_wp2->m_PcmData_mm, g_wp2->m_PcmData ) ;
 		}
+
 		if ( note_show_flag>0 )
 			noteInfo_proc( g_wp2->m_Freq, 1 ) ;
 
