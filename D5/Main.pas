@@ -4,6 +4,8 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
+  math,
+  utFreqCalc,
   HsMoveForm,
   StdCtrls, ExtCtrls, HsSkinPanel, MySlider;
 
@@ -17,14 +19,11 @@ type
 
   TTAF_dataValue = function ( dataName, dataValue: pchar ):integer ; stdcall;
 
-
-
   TfrmMain = class(TForm)
     Panel_Base: THsSkinPanel;
     Edit1: TEdit;
     Panel_Info: TPanel;
     Timer_Close: TTimer;
-    Panel_DataInfo: TMyPanel0;
     Button1: TButton;
     Button2: TButton;
     Button3: TButton;
@@ -36,6 +35,9 @@ type
     Panel_WaveForm: TMyPanel0;
     EditZoomValue: TEdit;
     Edit2: TEdit;
+    Panel_DataInfoBase: TPanel;
+    Panel_DataInfo: TMyPanel0;
+    imgNoteInfo: TImage;
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure FormResize(Sender: TObject);
@@ -55,10 +57,10 @@ type
     procedure Button3Click(Sender: TObject);
     procedure Button4Click(Sender: TObject);
     procedure Panel_WaveFormRefresh(Sender: TObject);
-    procedure ScrollBarWaveFormScroll(Sender: TObject;
-      ScrollCode: TScrollCode; var ScrollPos: Integer);
+    procedure ScrollBarWaveFormScroll(Sender: TObject; ScrollCode: TScrollCode; var ScrollPos: Integer);
     procedure EditZoomValueExit(Sender: TObject);
     procedure EditZoomValueEnter(Sender: TObject);
+    procedure Panel_DataInfoBaseResize(Sender: TObject);
   private
 
     FWndProc  : TWndMethod ;
@@ -88,6 +90,8 @@ type
     procedure SetImageSizeVars;
     procedure freq_and_pcm_event(sv: integer);
     procedure show_freq(freq_ss: string);
+    procedure draw_note_info;
+    procedure ResizeDataInfoBaseProc;
     { Private declarations }
   public
     { Public declarations }
@@ -112,6 +116,8 @@ var
   f_taf_dataValue : TTAF_dataValue=nil ;
 
   f_audio_open_flag : integer=0 ;
+
+  f_NoteInfo  : TStringList ;
 
   hs  : THs ;
 
@@ -259,6 +265,7 @@ begin
   application.Title := caption ;
 
   ReadIniValue ;
+  f_NoteInfo := TStringList.create ;
 
   gExePath0 := ExtractFilePath( gExeFile0 ) ;
 
@@ -333,7 +340,10 @@ begin
   Panel_WaveForm.Left := -20 ;
 //  Panel_WaveForm.Align := alClient ;
 
-  Panel_DataInfo.Left := f_UI_BorderWidth ;
+  Panel_DataInfoBase.Left := f_UI_BorderWidth ;
+  Panel_DataInfoBase.DoubleBuffered := true ;
+
+//  Panel_DataInfo.Left := f_UI_BorderWidth ;
   Panel_DataInfo.DoubleBuffered := true ;
 
   Panel_Info.Visible := true ;
@@ -550,10 +560,16 @@ begin
   image_WaveForm.Width := image_WaveForm.Parent.Width*strtoint(EditZoomValue.Text) ;
   image_WaveForm.Height := image_WaveForm.Parent.Height ;
 
+  Panel_DataInfoBase.SetBounds( Panel_DataInfoBase.Left,
+                                Panel_WaveFormBase.Height + bh + ba div 2 + 2,
+                                Panel_WaveFormBase.width,
+                                bb div 2 ) ;
+{
   Panel_DataInfo.SetBounds( Panel_DataInfo.Left,
                             Panel_WaveFormBase.Height + bh + ba div 2 + 2,
                             Panel_WaveFormBase.width,
                             bb div 2 ) ;
+}
 end ;
 ////////////////////////////////////////////////////////////////////////////////
 procedure TfrmMain.ScrollBarWaveFormScroll(Sender: TObject; ScrollCode: TScrollCode; var ScrollPos: Integer);
@@ -673,9 +689,12 @@ var
 begin
   ss := trim(Edit1.Text) ;
 //  TAF_Set_DV( 'COM_TEST2', ss ) ;
+{
   ss := ss + '.bmp' ;
   Image_WaveForm.Picture.LoadFromFile( ss ) ;
   Image_WaveForm.Refresh ;
+}
+  show_freq( '466.0' ) ;
 end;
 ////////////////////////////////////////////////////////////////////////////////
 procedure TfrmMain.Button3Click(Sender: TObject);
@@ -809,12 +828,111 @@ end;
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-procedure TfrmMain.show_freq( freq_ss: string );
+procedure TfrmMain.Panel_DataInfoBaseResize(Sender: TObject);
 begin
+  Wave_and_Data_Resize_proc ;
+  ResizeDataInfoBaseProc ;
+end;
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+procedure TfrmMain.ResizeDataInfoBaseProc;
+begin
+  draw_note_info ;
+end ;
+////////////////////////////////////////////////////////////////////////////////
+procedure TfrmMain.draw_note_info;
+var
+    sss,
+    ss  : string ;
+
+    a2,
+    bb,
+    b1,
+    b2,
+    x1,
+    x2,
+    xx,
+    y1,
+    y2,
+    yy  : integer ;
+
+    freq_color,
+    note_color,
+    minor_color,
+    bk_color  : integer ;
+
+begin
+
+  if ( gg_RunFlag<1 ) then exit ;
+
+  ClearImage( imgNoteInfo, $00003020 ) ;
+
+  sss := f_NoteInfo.Values['NoteName'] ;
+  if ( sss='' ) then exit ;
+
+  // show note and related
+  xx := 10 ;
+  bb := 2 * Panel_DataInfoBase.Height div 3 ;//Panel_DataInfoBase.Height ;
+
+  freq_color := RGB( 100, 110, 110 ) ;
+  note_color := RGB( 20, 220, 210 ) ;
+  minor_color := RGB( 180, 10, 150 ) ;
+  bk_color := Panel_DataInfoBase.color ;
+//  bk_color := $00101010 ;
+
+  ss := sss[1] ;
+  yy := -bb div 10 ;
+  x1 := xx + Canvas_DrawText2( imgNoteInfo.Picture.Bitmap.Canvas, ss, xx, yy, 1, 1, 'Arial', bb, note_color, bk_color, [fsBold] ) ;
+
+  y1 := yy+floor(bb/10) ;
+  y2 := yy+floor(bb/1.3) ;
+
+  b1 := floor(bb/2.5) ;
+  x1 := x1 - 5 ;
+  ss := sss[2] ;
+  if ( ss<>' ' ) then begin
+    Canvas_DrawText2( imgNoteInfo.Picture.Bitmap.Canvas, ss, x1, y1, 1, 1, 'Arial', b1, minor_color, bk_color, [fsBold] ) ;
+  end ;
+
+  ss := sss[3] ;
+  a2 := Canvas_DrawText2( imgNoteInfo.Picture.Bitmap.Canvas, ss, x1, y2, 1, 1, 'Arial', b1, RGB(80,150,180), bk_color, [fsBold] ) ;
+
+
+  b2 := floor(b1 / 2.5) ;
+  x2 := x1 + floor(1.8*a2) ;
+
+  y1 := y1 + b2 - floor(0.25*b2) ;
+  ss := f_NoteInfo.Values['NoteFreq'] ;
+  a2 := Canvas_DrawText2( imgNoteInfo.Picture.Bitmap.Canvas, ss, x2-1, y1, 1, 1, 'Arial', b2, freq_color, bk_color, [] ) ;
+
+  y1 := y1 + floor(b2*1.3) ;
+  ss := f_NoteInfo.Values['CurFreq'] ;
+  Canvas_DrawText2( imgNoteInfo.Picture.Bitmap.Canvas, ss, x2+a2, y1, -1, 1, 'Arial', b2, freq_color, bk_color, [] ) ;
+
+  y1 := y1 + floor(b2*1.3) ;
+  ss := f_NoteInfo.Values['FreqDiff'] ;
+  if ( ss[1]<>'-' ) then begin
+    ss := '+' + ss ;
+  end ;
+  Canvas_DrawText2( imgNoteInfo.Picture.Bitmap.Canvas, ss, x2+a2, y1, -1, 1, 'Arial', b2, RGB(240,10,10), bk_color, [] ) ;
+
+  y1 := y1 + floor(b2*1.3) ;
+  ss := f_NoteInfo.Values['FreqCens'] ;
+  if ( ss[1]<>'-' ) then begin
+    ss := '+' + ss ;
+  end ;
+  Canvas_DrawText2( imgNoteInfo.Picture.Bitmap.Canvas, ss, x2+a2, y1, -1, 1, 'Arial', b2, RGB(200,100,10), bk_color, [] ) ;
+
+  imgNoteInfo.Refresh ;
+
 end ;
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
+procedure TfrmMain.show_freq( freq_ss: string );
+begin
+  gFreqCalc.GetNoteInfoByFreq( strtofloat(freq_ss), f_NoteInfo ) ;
+  draw_note_info ;
+end ;
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
