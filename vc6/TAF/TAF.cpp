@@ -6487,7 +6487,7 @@ long do_test4_proc( char *wav_file, long note_show_flag, long pop_event )
 	__try
 	{
 		nCount = 0 ;
-		show_flag = 1 ;
+		show_flag = 0 ;
 		print_flag = -1 ;
 		while ( nSize>0 )
 		{
@@ -6497,11 +6497,13 @@ long do_test4_proc( char *wav_file, long note_show_flag, long pop_event )
 				g_wp2->make_period_data( (short*)pcm_data, nRead/2, show_flag, print_flag, nCount ) ;
 				if ( pop_event>1 )
 				{
-					pop_period_event( g_wp2->m_Freq, nRead, pcm_data ) ;
+					pop_period_event( g_wp2->m_Freq, g_wp2->m_PcmData_mm*2, g_wp2->m_PcmData ) ;
+//					pop_period_event( g_wp2->m_Freq, nRead, pcm_data ) ;
 				}
 				if ( note_show_flag>1 )
 					noteInfo_proc( g_wp2->m_Freq, 1 ) ;
 log_prt( g_logFile, "=======================================================zq=%-8.3lf[%1.3f] (%-8.3lf) nCount=%-8ld\r\n", g_wp2->m_ZQ, g_wp2->m_Freq, g_wp2->m_TimeLen, nCount ) ;
+//Sleep( 200 ) ;
 			}
 			nOff += nRead ;
 			nSize -= nRead ;
@@ -6515,7 +6517,7 @@ log_prt( g_logFile, "make_FreqZQ===================zq2=%-8.3lf(%-1.3lf) tm2=%-8.
 
 		if ( pop_event>0 )
 		{
-			pop_period_event( g_wp2->m_Freq, g_wp2->m_PcmData_mm, g_wp2->m_PcmData ) ;
+			pop_period_event( g_wp2->m_Freq, g_wp2->m_PcmData_mm*2, g_wp2->m_PcmData ) ;
 		}
 
 		if ( note_show_flag>0 )

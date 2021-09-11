@@ -92,6 +92,7 @@ type
     procedure show_freq(freq_ss: string);
     procedure draw_note_info;
     procedure ResizeDataInfoBaseProc;
+    procedure draw_pcm_waveForm;
     { Private declarations }
   public
     { Public declarations }
@@ -118,6 +119,8 @@ var
   f_audio_open_flag : integer=0 ;
 
   f_NoteInfo  : TStringList ;
+  f_PcmBuf  : PSmallInteger ;
+  f_PcmLen  : integer ;
 
   hs  : THs ;
 
@@ -140,9 +143,16 @@ var
 begin
   pp := pchar(sv) ;
   ss := pp ;
-  sm := get_ss_name( ss, ',' ) ; // ÆµÂÊ
+  sm := get_ss_name0( ss, ',' ) ; // ÆµÂÊ
+
   show_freq( sm ) ;
-  ss := get_ss_value( ss, ',' ) ;
+
+  sm := get_ss_name0( ss, ',' ) ;
+  f_PcmLen := strtoint(sm) ;
+  f_PcmBuf := PSmallInteger( strtoint(ss) ) ;
+
+  draw_pcm_waveForm ;
+
 end ;
 ////////////////////////////////////////////////////////////////////////////////
 procedure TfrmMain.FireEvent( sn, sv: integer );
@@ -837,6 +847,7 @@ end;
 ////////////////////////////////////////////////////////////////////////////////
 procedure TfrmMain.ResizeDataInfoBaseProc;
 begin
+  draw_pcm_waveForm ;
   draw_note_info ;
 end ;
 ////////////////////////////////////////////////////////////////////////////////
@@ -860,6 +871,7 @@ var
     note_color,
     minor_color,
     bk_color  : integer ;
+    font_name : string ;
 
 begin
 
@@ -870,11 +882,17 @@ begin
   sss := f_NoteInfo.Values['NoteName'] ;
   if ( sss='' ) then exit ;
 
+//  font_name := 'MS UI Gothic' ;
+//  font_name := 'Tahoma' ;
+//  font_name := 'Arial Black' ;
+  font_name := 'Arial' ;
+
   // show note and related
   xx := 10 ;
-  bb := 2 * Panel_DataInfoBase.Height div 3 ;//Panel_DataInfoBase.Height ;
+//  bb := 2 * Panel_DataInfoBase.Height div 3 ;
+  bb := floor(0.55*Panel_DataInfoBase.Height) ;
 
-  freq_color := RGB( 100, 110, 110 ) ;
+  freq_color := RGB( 80, 120, 120 ) ;
   note_color := RGB( 20, 220, 210 ) ;
   minor_color := RGB( 180, 10, 150 ) ;
   bk_color := Panel_DataInfoBase.color ;
@@ -882,46 +900,46 @@ begin
 
   ss := sss[1] ;
   yy := -bb div 10 ;
-  x1 := xx + Canvas_DrawText2( imgNoteInfo.Picture.Bitmap.Canvas, ss, xx, yy, 1, 1, 'Arial', bb, note_color, bk_color, [fsBold] ) ;
+  x1 := xx + Canvas_DrawText2( imgNoteInfo.Picture.Bitmap.Canvas, ss, xx, yy, 1, 1, font_name, bb, note_color, bk_color, [fsBold] ) ;
 
   y1 := yy+floor(bb/10) ;
   y2 := yy+floor(bb/1.3) ;
 
   b1 := floor(bb/2.5) ;
-  x1 := x1 - 5 ;
+  x1 := x1 - 0 ;
   ss := sss[2] ;
   if ( ss<>' ' ) then begin
-    Canvas_DrawText2( imgNoteInfo.Picture.Bitmap.Canvas, ss, x1, y1, 1, 1, 'Arial', b1, minor_color, bk_color, [fsBold] ) ;
+    Canvas_DrawText2( imgNoteInfo.Picture.Bitmap.Canvas, ss, x1, y1, 1, 1, font_name, b1, minor_color, bk_color, [fsBold] ) ;
   end ;
 
   ss := sss[3] ;
-  a2 := Canvas_DrawText2( imgNoteInfo.Picture.Bitmap.Canvas, ss, x1, y2, 1, 1, 'Arial', b1, RGB(80,150,180), bk_color, [fsBold] ) ;
+  a2 := Canvas_DrawText2( imgNoteInfo.Picture.Bitmap.Canvas, ss, x1, y2, 1, 1, font_name, b1, RGB(80,150,180), bk_color, [fsBold] ) ;
 
 
   b2 := floor(b1 / 2.5) ;
-  x2 := x1 + floor(1.8*a2) ;
+  x2 := x1 + floor(1.5*a2) ;
 
   y1 := y1 + b2 - floor(0.25*b2) ;
   ss := f_NoteInfo.Values['NoteFreq'] ;
-  a2 := Canvas_DrawText2( imgNoteInfo.Picture.Bitmap.Canvas, ss, x2-1, y1, 1, 1, 'Arial', b2, freq_color, bk_color, [] ) ;
+  a2 := Canvas_DrawText2( imgNoteInfo.Picture.Bitmap.Canvas, ss, x2-1, y1, 1, 1, font_name, b2, freq_color, bk_color, [] ) ;
 
-  y1 := y1 + floor(b2*1.3) ;
+  y1 := y1 + floor(b2*1.4) ;
   ss := f_NoteInfo.Values['CurFreq'] ;
-  Canvas_DrawText2( imgNoteInfo.Picture.Bitmap.Canvas, ss, x2+a2, y1, -1, 1, 'Arial', b2, freq_color, bk_color, [] ) ;
+  Canvas_DrawText2( imgNoteInfo.Picture.Bitmap.Canvas, ss, x2+a2, y1, -1, 1, font_name, b2, freq_color-RGB(20,20,20), bk_color, [] ) ;
 
   y1 := y1 + floor(b2*1.3) ;
   ss := f_NoteInfo.Values['FreqDiff'] ;
   if ( ss[1]<>'-' ) then begin
     ss := '+' + ss ;
   end ;
-  Canvas_DrawText2( imgNoteInfo.Picture.Bitmap.Canvas, ss, x2+a2, y1, -1, 1, 'Arial', b2, RGB(240,10,10), bk_color, [] ) ;
+  Canvas_DrawText2( imgNoteInfo.Picture.Bitmap.Canvas, ss, x2+a2, y1, -1, 1, font_name, b2, RGB(240,10,10), bk_color, [] ) ;
 
   y1 := y1 + floor(b2*1.3) ;
   ss := f_NoteInfo.Values['FreqCens'] ;
   if ( ss[1]<>'-' ) then begin
     ss := '+' + ss ;
   end ;
-  Canvas_DrawText2( imgNoteInfo.Picture.Bitmap.Canvas, ss, x2+a2, y1, -1, 1, 'Arial', b2, RGB(200,100,10), bk_color, [] ) ;
+  Canvas_DrawText2( imgNoteInfo.Picture.Bitmap.Canvas, ss, x2+a2, y1, -1, 1, font_name, b2, RGB(200,100,10), bk_color, [] ) ;
 
   imgNoteInfo.Refresh ;
 
@@ -934,6 +952,15 @@ begin
   draw_note_info ;
 end ;
 ////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+procedure TfrmMain.draw_pcm_waveForm;
+begin
+  ClearImage( Image_WaveForm, $00003020 ) ;
+  if ( f_PcmLen>0 ) then begin
+    DisplayWaveForm5( Image_WaveForm, f_PcmBuf, f_PcmLen, RGB(01,01,01), RGB(10,120,10) ) ;
+    Refresh ;
+  end ;
+end ;
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////

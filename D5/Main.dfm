@@ -1,12 +1,12 @@
 object frmMain: TfrmMain
-  Left = 601
-  Top = 235
-  Width = 640
-  Height = 242
+  Left = 670
+  Top = 217
+  Width = 800
+  Height = 320
   Caption = '手风琴调音软件'
   Color = clBtnFace
-  Constraints.MinHeight = 200
-  Constraints.MinWidth = 400
+  Constraints.MinHeight = 320
+  Constraints.MinWidth = 800
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -11
@@ -23,8 +23,8 @@ object frmMain: TfrmMain
   object Panel_Base: THsSkinPanel
     Left = 0
     Top = 0
-    Width = 632
-    Height = 215
+    Width = 792
+    Height = 293
     Align = alClient
     BevelOuter = bvNone
     Color = 147767
