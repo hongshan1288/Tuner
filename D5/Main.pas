@@ -38,6 +38,7 @@ type
     Panel_DataInfoBase: TPanel;
     Panel_DataInfo: TMyPanel0;
     imgNoteInfo: TImage;
+    Panel_KeyboardBase: TPanel;
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure FormResize(Sender: TObject);
@@ -61,6 +62,7 @@ type
     procedure EditZoomValueExit(Sender: TObject);
     procedure EditZoomValueEnter(Sender: TObject);
     procedure Panel_DataInfoBaseResize(Sender: TObject);
+    procedure Panel_WaveFormBaseResize(Sender: TObject);
   private
 
     FWndProc  : TWndMethod ;
@@ -109,7 +111,7 @@ uses
 var
 
   f_CaptionHeight : integer=28 ;
-  f_UI_BorderWidth: integer=15 ;
+  f_UI_BorderWidth: integer=12 ;
   f_freq_show_fmt : string='3.2' ;
 
   f_ZoomValue : string ;
@@ -338,8 +340,6 @@ var
     aBMP  : TBitMap ;
 begin
 
-  Panel_WaveFormBase.Top := f_CaptionHeight + f_UI_BorderWidth div 2 -2 ;
-  Panel_WaveFormBase.Left := f_UI_BorderWidth ;
   Panel_WaveFormBase.Color := $00101010 ;
 
   Image_WaveForm.Align := alNone ;
@@ -551,6 +551,10 @@ end ;
 ////////////////////////////////////////////////////////////////////////////////
 procedure TfrmMain.Reset_Other_Panels_Position;
 var
+    xx,
+    yy,
+    aa,
+    bd,
     bh,
     ba,
     bb    : integer ;
@@ -558,29 +562,28 @@ begin
 
   bh := f_CaptionHeight ; // 界面抬头的高度
   ba := f_UI_BorderWidth ;
-  
-  bb := Panel_WaveFormBase.Parent.Height - ( bh+ba+ba div 2 ) ;
 
-//  bb := bb * 2 ;
+  bb := Panel_WaveFormBase.Parent.Height - ( bh+ba+ba ) ; // 总高
+  aa := Panel_WaveFormBase.Parent.Width - ba*2 ; // 总宽
+  bb := bb div 3 ; // 分三份
+  bd := ba div 2 ; // 隔栏高度为边高的一半
 
-  Panel_WaveFormBase.SetBounds( Panel_WaveFormBase.Left,
-                                Panel_WaveFormBase.Top,
-                                Panel_WaveFormBase.Parent.Width - ba*2,
-                                bb div 2 ) ;
+  xx := ba ;
+  yy := bh + bd ;
+  Panel_WaveFormBase.SetBounds( xx, yy, aa, bb-bd ) ;
+  yy := yy + bb ;
+  Panel_DataInfoBase.SetBounds( xx, yy, aa, bb-bd ) ;
+  yy := yy + bb ;
+  bb := Panel_WaveFormBase.Parent.Height-yy-ba ;
+  Panel_KeyboardBase.SetBounds( xx, yy, aa, bb ) ;
+
+end ;
+////////////////////////////////////////////////////////////////////////////////
+procedure TfrmMain.Panel_WaveFormBaseResize(Sender: TObject);
+begin
   image_WaveForm.Width := image_WaveForm.Parent.Width*strtoint(EditZoomValue.Text) ;
   image_WaveForm.Height := image_WaveForm.Parent.Height ;
-
-  Panel_DataInfoBase.SetBounds( Panel_DataInfoBase.Left,
-                                Panel_WaveFormBase.Height + bh + ba div 2 + 2,
-                                Panel_WaveFormBase.width,
-                                bb div 2 ) ;
-{
-  Panel_DataInfo.SetBounds( Panel_DataInfo.Left,
-                            Panel_WaveFormBase.Height + bh + ba div 2 + 2,
-                            Panel_WaveFormBase.width,
-                            bb div 2 ) ;
-}
-end ;
+end;
 ////////////////////////////////////////////////////////////////////////////////
 procedure TfrmMain.ScrollBarWaveFormScroll(Sender: TObject; ScrollCode: TScrollCode; var ScrollPos: Integer);
 begin
@@ -913,7 +916,7 @@ begin
   end ;
 
   ss := sss[3] ;
-  a2 := Canvas_DrawText2( imgNoteInfo.Picture.Bitmap.Canvas, ss, x1, y2, 1, 1, font_name, b1, RGB(80,150,180), bk_color, [fsBold] ) ;
+  a2 := Canvas_DrawText2( imgNoteInfo.Picture.Bitmap.Canvas, ss, x1, y2, 1, 1, font_name, b1, RGB(80,180,120), bk_color, [fsBold] ) ;
 
 
   b2 := floor(b1 / 2.5) ;

@@ -104,8 +104,8 @@ object frmMain: TfrmMain
       TabOrder = 1
     end
     object Panel_Msg: TPanel
-      Left = 28
-      Top = 116
+      Left = 268
+      Top = 92
       Width = 553
       Height = 89
       BevelInner = bvLowered
@@ -117,13 +117,14 @@ object frmMain: TfrmMain
     end
     object Panel_WaveFormBase: TPanel
       Left = 312
-      Top = 30
+      Top = 29
       Width = 193
       Height = 59
       BevelOuter = bvNone
       Caption = 'Panel_WaveFormBase'
       Color = clGray
       TabOrder = 7
+      OnResize = Panel_WaveFormBaseResize
       object Image_WaveForm: TImage
         Left = 0
         Top = 16
@@ -194,6 +195,15 @@ object frmMain: TfrmMain
         OnResize = Panel_DataInfoResize
         OnRefresh = Panel_DataInfoRefresh
       end
+    end
+    object Panel_KeyboardBase: TPanel
+      Left = 24
+      Top = 192
+      Width = 185
+      Height = 41
+      BevelOuter = bvNone
+      Color = 1052720
+      TabOrder = 11
     end
   end
   object Timer_Close: TTimer
