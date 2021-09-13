@@ -197,13 +197,30 @@ object frmMain: TfrmMain
       end
     end
     object Panel_KeyboardBase: TPanel
-      Left = 24
-      Top = 192
-      Width = 185
-      Height = 41
+      Left = 16
+      Top = 184
+      Width = 273
+      Height = 81
       BevelOuter = bvNone
       Color = 1052720
       TabOrder = 11
+      OnResize = Panel_KeyboardBaseResize
+      object Image_Keyboard: TImage
+        Left = 8
+        Top = 8
+        Width = 105
+        Height = 49
+      end
+      object ScrollBar_Keyboard: TScrollBar
+        Left = 0
+        Top = 65
+        Width = 273
+        Height = 16
+        Align = alBottom
+        PageSize = 0
+        TabOrder = 0
+        OnScroll = ScrollBar_KeyboardScroll
+      end
     end
   end
   object Timer_Close: TTimer

@@ -39,6 +39,8 @@ type
     Panel_DataInfo: TMyPanel0;
     imgNoteInfo: TImage;
     Panel_KeyboardBase: TPanel;
+    Image_Keyboard: TImage;
+    ScrollBar_Keyboard: TScrollBar;
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure FormResize(Sender: TObject);
@@ -63,6 +65,9 @@ type
     procedure EditZoomValueEnter(Sender: TObject);
     procedure Panel_DataInfoBaseResize(Sender: TObject);
     procedure Panel_WaveFormBaseResize(Sender: TObject);
+    procedure Panel_KeyboardBaseResize(Sender: TObject);
+    procedure ScrollBar_KeyboardScroll(Sender: TObject;
+      ScrollCode: TScrollCode; var ScrollPos: Integer);
   private
 
     FWndProc  : TWndMethod ;
@@ -95,6 +100,9 @@ type
     procedure draw_note_info;
     procedure ResizeDataInfoBaseProc;
     procedure draw_pcm_waveForm;
+    procedure Init_Keyboard_vars;
+    procedure Draw_AllKeyboards;
+    procedure Draw_Keyboard( xx, yy, aa, bb, bk_color, border_color: integer ) ;
     { Private declarations }
   public
     { Public declarations }
@@ -123,6 +131,12 @@ var
   f_NoteInfo  : TStringList ;
   f_PcmBuf  : PSmallInteger ;
   f_PcmLen  : integer ;
+
+  f_KeyBoard_Note_si,
+  f_KeyBoard_Note_ei  : integer ;
+
+  f_KeyBoard_show_nn : integer=10 ;
+  f_KeyBoard_width  : integer ;
 
   hs  : THs ;
 
@@ -285,6 +299,8 @@ begin
 
   FWndProc := WindowProc ;
   WindowProc := WndProc0 ;
+
+  Init_Keyboard_vars ;
 
 //  f_uninstall := 0 ;
 //  gg_minIcon_F := 0 ;
@@ -565,7 +581,8 @@ begin
 
   bb := Panel_WaveFormBase.Parent.Height - ( bh+ba+ba ) ; // 总高
   aa := Panel_WaveFormBase.Parent.Width - ba*2 ; // 总宽
-  bb := bb div 3 ; // 分三份
+
+  bb := floor(0.3*bb) ; // 分三份
   bd := ba div 2 ; // 隔栏高度为边高的一半
 
   xx := ba ;
@@ -700,14 +717,13 @@ procedure TfrmMain.Button2Click(Sender: TObject);
 var
     ss    : string ;
 begin
+
   ss := trim(Edit1.Text) ;
-//  TAF_Set_DV( 'COM_TEST2', ss ) ;
-{
-  ss := ss + '.bmp' ;
-  Image_WaveForm.Picture.LoadFromFile( ss ) ;
-  Image_WaveForm.Refresh ;
-}
   show_freq( '466.0' ) ;
+
+  Draw_AllKeyBoards ;
+//  Draw_Keyboard( 10, '' ) ;
+
 end;
 ////////////////////////////////////////////////////////////////////////////////
 procedure TfrmMain.Button3Click(Sender: TObject);
@@ -885,21 +901,16 @@ begin
   sss := f_NoteInfo.Values['NoteName'] ;
   if ( sss='' ) then exit ;
 
-//  font_name := 'MS UI Gothic' ;
-//  font_name := 'Tahoma' ;
-//  font_name := 'Arial Black' ;
   font_name := 'Arial' ;
 
   // show note and related
   xx := 10 ;
-//  bb := 2 * Panel_DataInfoBase.Height div 3 ;
   bb := floor(0.55*Panel_DataInfoBase.Height) ;
 
   freq_color := RGB( 80, 120, 120 ) ;
   note_color := RGB( 20, 220, 210 ) ;
   minor_color := RGB( 180, 10, 150 ) ;
   bk_color := Panel_DataInfoBase.color ;
-//  bk_color := $00101010 ;
 
   ss := sss[1] ;
   yy := -bb div 10 ;
@@ -963,6 +974,91 @@ begin
     DisplayWaveForm5( Image_WaveForm, f_PcmBuf, f_PcmLen, RGB(01,01,01), RGB(10,120,10) ) ;
     Refresh ;
   end ;
+end ;
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+procedure TfrmMain.Init_Keyboard_vars;
+begin
+  f_KeyBoard_Note_si := gFreqCalc.get_idx_by_note( 'F 3' ) ;
+  f_KeyBoard_Note_ei := f_KeyBoard_Note_si + 41 ;
+end ;
+////////////////////////////////////////////////////////////////////////////////
+procedure TfrmMain.ScrollBar_KeyboardScroll(Sender: TObject; ScrollCode: TScrollCode; var ScrollPos: Integer);
+begin
+  H_ScrollBar_Scroll( ScrollBar_Keyboard, ScrollCode, ScrollPos, Image_Keyboard ) ;
+end;
+////////////////////////////////////////////////////////////////////////////////
+procedure TfrmMain.Panel_KeyboardBaseResize(Sender: TObject);
+var
+    nn  : integer ;
+begin
+
+  if ( gg_RunFlag<1 ) then exit ;
+
+  f_KeyBoard_width := Image_Keyboard.Parent.Height ; //Image_Keyboard.Parent.Width div f_KeyBoard_show_nn ;
+  f_KeyBoard_width := f_KeyBoard_width div 5 ;
+
+  nn := 7 * (f_KeyBoard_Note_ei-f_KeyBoard_Note_si) div 12 ;
+
+  Image_Keyboard.Width := (nn+2) * f_KeyBoard_width ;
+  Image_Keyboard.Height := Image_Keyboard.Parent.Height ;
+
+  H_ScrollBar_Vars( ScrollBar_Keyboard, Panel_KeyboardBase, Image_Keyboard ) ;
+
+  Draw_AllKeyBoards ;
+
+end;
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+procedure TfrmMain.Draw_AllKeyBoards;
+var
+    black_note  : string;
+    yy,
+    bb,
+    aa,
+    xx,
+    dx,
+    bk_cc,
+    bd_cc,
+    i, n  : integer ;
+    aa_ff : double ;
+    sNote : string ;
+begin
+
+  ClearImage( Image_Keyboard, Panel_KeyboardBase.Color ) ;
+  bk_cc := RGB(254,254,254) ;
+  bd_cc := RGB(2,2,2) ;
+  black_note := '' ;
+  n := 41 ;
+  xx := 5 ;
+  aa := f_KeyBoard_width ;
+  dx := aa ;
+  bb := Image_Keyboard.Height-floor( 0.8*aa ) ;
+  yy := 0 ;
+  aa_ff := 0.66 ;
+  for i:=0 to n-1 do begin
+    sNote := gFreqCalc.get_note_by_idx( i+f_KeyBoard_Note_si ) ;
+    if ( sNote[2]=' ' ) then begin
+      Draw_Keyboard( xx, yy, aa, bb, bk_cc, bd_cc ) ;
+      if ( black_note<>'' ) then begin
+        Draw_Keyboard( xx-floor(aa_ff*aa/2), yy, floor(aa_ff*aa), floor(0.80*bb), bd_cc, bd_cc ) ;
+        black_note := '' ;
+      end ;
+      xx := xx + dx ;
+    end else begin
+      black_note := sNote ;
+    end ;
+  end ;
+  DrawBarOnCanvas( Image_Keyboard.Picture.Bitmap.Canvas, 0, 0, Image_Keyboard.width, 20, Panel_KeyboardBase.Color ) ;
+end ;
+////////////////////////////////////////////////////////////////////////////////
+procedure TfrmMain.Draw_Keyboard( xx, yy, aa, bb, bk_color, border_color: integer ) ;
+var
+  dx  : integer ;
+begin
+  dx := floor(0.36*aa) ;
+  DrawRoundBarOnCanvas( Image_Keyboard.Picture.Bitmap.Canvas, xx, yy, aa, bb, dx, dx+1, bk_color, border_color ) ;
 end ;
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
