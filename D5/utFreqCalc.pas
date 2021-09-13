@@ -27,9 +27,14 @@ type
     function get_idx_by_freq(note_freq: double): integer;
 
   public
+
     constructor Create ;
     destructor Destroy; override ;
     procedure GetNoteInfoByFreq(aFreq: double; aNoteInfoList: TStringList) ;
+
+    function get_Note_by_idx( idx: integer): string;
+    function get_idx_by_note( aNote: string): integer;
+
   end ;
 
 var
@@ -121,12 +126,11 @@ function TFreqCalc.get_freq_by_note( music_note: string ) : double ;
 var
     i : integer ;
 begin
-  result := -1 ;
-  for i:=0 to NOTE_INFO_MAX-2 do begin
-    if ( music_note=FFreqInfo[i].NoteName ) then begin
-      result := FFreqInfo[i].NoteFreq ;
-      exit ;
-    end ;
+  i := get_idx_by_note( music_note ) ;
+  if ( i>=0 ) then begin
+    result := FFreqInfo[i].NoteFreq ;
+  end else begin
+    result := -1 ;
   end ;
 end ;
 //////////////////////////////////////////////////////////////////////
@@ -161,6 +165,24 @@ begin
     aNoteInfoList.Add( 'CurFreq='+format( '%1.3f', [aFreq] ) + 'Hz' ) ;
     aNoteInfoList.Add( 'FreqDiff='+format( '%1.3f', [aFreq-FFreqInfo[idx].NoteFreq] ) + 'Hz' ) ;
     aNoteInfoList.Add( 'FreqCens='+format( '%1.3f', [(aFreq-FFreqInfo[idx].NoteFreq)/FFreqInfo[idx].NoteCns] ) + 'Cn' ) ;
+  end ;
+end;
+////////////////////////////////////////////////////////////////////////////////
+function TFreqCalc.get_Note_by_idx(idx: integer): string;
+begin
+  result := FFreqInfo[idx].NoteName ;
+end;
+////////////////////////////////////////////////////////////////////////////////
+function TFreqCalc.get_idx_by_note(aNote: string): integer;
+var
+    i : integer ;
+begin
+  result := -1 ;
+  for i:=0 to NOTE_INFO_MAX-1 do begin
+    if ( aNote=FFreqInfo[i].NoteName ) then begin
+      result := i ;
+      exit ;
+    end ;
   end ;
 end;
 ////////////////////////////////////////////////////////////////////////////////
