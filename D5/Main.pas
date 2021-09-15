@@ -115,6 +115,9 @@ type
     procedure ImageKeyboard_WndProc(var Message: TMessage);
     procedure Highlight_Keyboard(f, x, y: integer);
     function get_Keyboard_idx(x, y: integer): integer;
+    procedure Move_Keyboards(dx: integer);
+    procedure FreqLight_Keyboard(aNote: string);
+    procedure Align_Keyboards(xx: integer);
     { Private declarations }
   public
     { Public declarations }
@@ -150,13 +153,16 @@ var
   f_KeyBoard_red_color,
   f_KeyBoard_black_color,
 
+  f_KeyBoard_MouseDown_X,
+  f_KeyBoard_MouseDown,
   f_KeyBoard_MouseIn,
   f_KeyBoard_Note_si,
   f_KeyBoard_Note_ei,
   f_KeyBoard_width,
   f_KeyBoard_show_nn  : integer ;
 
-  f_KeyBoard_HighlightNote  : string ;
+  f_KeyBoard_FreqNote,
+  f_KeyBoard_MouseNote  : string ;
 
   f_KeyBoard_xyab : array[0..128] of TKeyboard_xyab ;
 
@@ -703,7 +709,7 @@ begin
   ss := trim(Edit1.Text) ;
   show_freq( '466.0' ) ;
 
-  Draw_AllKeyBoards ;
+// Draw_AllKeyBoards ;
 //  Draw_Keyboard( 10, '' ) ;
 
 end;
@@ -883,11 +889,13 @@ begin
   sss := f_NoteInfo.Values['NoteName'] ;
   if ( sss='' ) then exit ;
 
+  f_KeyBoard_FreqNote := sss ;
+  
   font_name := 'Arial' ;
 
   // show note and related
   xx := 10 ;
-  bb := floor(0.55*Panel_DataInfoBase.Height) ;
+  bb := floor(0.80*Panel_DataInfoBase.Height) ;
 
   freq_color := RGB( 80, 120, 120 ) ;
   note_color := RGB( 20, 220, 210 ) ;
@@ -895,7 +903,8 @@ begin
   bk_color := Panel_DataInfoBase.color ;
 
   ss := sss[1] ;
-  yy := -bb div 10 ;
+//  yy := -bb div 10 ;
+  yy := -bb div 8 ;
   x1 := xx + Canvas_DrawText2( imgNoteInfo.Picture.Bitmap.Canvas, ss, xx, yy, 1, 1, font_name, bb, note_color, bk_color, [fsBold] ) ;
 
   y1 := yy+floor(bb/10) ;
@@ -946,6 +955,7 @@ procedure TfrmMain.show_freq( freq_ss: string );
 begin
   gFreqCalc.GetNoteInfoByFreq( strtofloat(freq_ss), f_NoteInfo ) ;
   draw_note_info ;
+  FreqLight_Keyboard( f_NoteInfo.values['NoteName'] ) ;
 end ;
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -1075,6 +1085,7 @@ var
     idx : integer ;
     ss  : string ;
 begin
+
   idx := gFreqCalc.get_idx_by_note( aNote ) ;
   xx := f_KeyBoard_xyab[idx - f_KeyBoard_Note_si].x ;
   aa := f_KeyBoard_width ;
@@ -1083,14 +1094,14 @@ begin
 
   bk_cc := f_KeyBoard_white_color ;
   bd_cc := f_KeyBoard_black_color ;
-  
+
   fa := floor(0.24*aa) ;
 
   if ( aNote[2]=' ' ) then begin
 
     if ( aFlag=1 ) then begin
       bk_cc := f_KeyBoard_green_color ;
-    end else if ( aFlag=2 ) then begin
+    end else if ( f_KeyBoard_FreqNote=aNote ) then begin
       bk_cc := f_KeyBoard_red_color ;
     end ;
 
@@ -1116,7 +1127,7 @@ begin
     bk_cc := bd_cc ;
     if ( aFlag=1 ) then begin
       bk_cc := f_KeyBoard_green_color-RGB(200,150,200) ;
-    end else if ( aFlag=2 ) then begin
+    end else if ( f_KeyBoard_FreqNote=aNote ) then begin
       bk_cc := f_KeyBoard_red_color-RGB(150,200,200) ;
     end ;
     Draw_Keyboard_new( idx, bk_cc, bd_cc ) ;
@@ -1169,21 +1180,55 @@ begin
   end ;
 end ;
 ////////////////////////////////////////////////////////////////////////////////
+procedure TfrmMain.FreqLight_Keyboard( aNote: string );
+var
+  aa,
+  xx,
+  idx : integer ;
+begin
+  idx := gFreqCalc.get_idx_by_note( aNote ) ;
+  idx := idx - f_KeyBoard_Note_si ;
+  xx := f_Keyboard_xyab[idx].x ;
+  aa := f_Keyboard_xyab[idx].a ;
+  xx := xx - Image_Keyboard.parent.width div 2 ;
+  Align_Keyboards( -(xx+aa div 2) ) ;
+  Show_Keyboard( 2, aNote ) ;
+end ;
+////////////////////////////////////////////////////////////////////////////////
 procedure TfrmMain.Highlight_Keyboard( f, x, y: integer );
 var
   idx : integer ;
 begin
-  if ( f_KeyBoard_HighlightNote<>'' ) then begin
-    Show_Keyboard( 0, f_KeyBoard_HighlightNote ) ;
+  if ( f_KeyBoard_MouseNote<>'' ) then begin
+    Show_Keyboard( 0, f_KeyBoard_MouseNote ) ;
   end ;
   if ( f=0 ) then begin
     exit ;
   end ;
   idx := get_Keyboard_idx( x, y ) ;
   if ( idx>=0 ) then begin
-    f_KeyBoard_HighlightNote := gFreqCalc.get_Note_by_idx( idx+f_KeyBoard_Note_si ) ;
-    Show_Keyboard( 2, f_KeyBoard_HighlightNote ) ;
+    f_KeyBoard_MouseNote := gFreqCalc.get_Note_by_idx( idx+f_KeyBoard_Note_si ) ;
+    Show_Keyboard( 1, f_KeyBoard_MouseNote ) ;
   end ;
+end ;
+////////////////////////////////////////////////////////////////////////////////
+procedure TfrmMain.Align_Keyboards( xx: integer );
+begin
+  Image_Keyboard.Left := xx ;
+  // ×ó¶ÔÆë
+  if ( Image_Keyboard.Left>0 ) then begin
+    Image_Keyboard.Left := 0 ;
+  end ;
+  // ÓÒ¶ÔÆë
+  if ( Image_Keyboard.Parent.width-Image_Keyboard.Left>=Image_Keyboard.width ) then begin
+    Image_Keyboard.Left := Image_Keyboard.Parent.width-Image_Keyboard.width ;
+  end ;
+  H_ScrollBar_Position( ScrollBar_Keyboard, Image_Keyboard ) ;
+end ;
+////////////////////////////////////////////////////////////////////////////////
+procedure TfrmMain.Move_Keyboards( dx: integer );
+begin
+  Align_Keyboards( Image_Keyboard.Left + dx ) ;
 end ;
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -1196,12 +1241,21 @@ begin
     if ( Message.Msg=0 ) then begin
     end else if ( Message.Msg=CM_MOUSEENTER ) then begin
       f_KeyBoard_MouseIn := 1 ;
-      f_KeyBoard_HighlightNote := '' ;
+      f_KeyBoard_MouseDown := 0 ;
+      f_KeyBoard_MouseNote := '' ;
     end else if ( Message.Msg=CM_MOUSELEAVE ) then begin
       f_KeyBoard_MouseIn := 0 ;
+      f_KeyBoard_MouseDown := 0 ;
       Highlight_Keyboard( 0, 0, 0 ) ;
+    end else if ( Message.Msg=WM_LBUTTONDOWN ) then begin
+      f_KeyBoard_MouseDown := 1 ;
+      f_KeyBoard_MouseDown_X := Message.LParamLo ;
+    end else if ( Message.Msg=WM_LBUTTONUP ) then begin
+      f_KeyBoard_MouseDown := 0 ;
     end else if ( Message.Msg=WM_MOUSEMOVE ) then begin
-      if ( f_KeyBoard_MouseIn>0 ) then begin
+      if ( f_KeyBoard_MouseDown>0 ) then begin
+        Move_Keyboards( Message.LParamLo-f_KeyBoard_MouseDown_X ) ; // dx 
+      end else if ( f_KeyBoard_MouseIn>0 ) then begin
         Highlight_Keyboard( 1, Message.LParamLo, Message.LParamHi ) ; // x, y
       end ;
     end ;
