@@ -18,7 +18,7 @@ type
   end ;
 
   TKeyboard_xyab = packed record
-    x, y, a, b  : integer ;
+    x, y, a, b, f  : integer ;
     note_idx  : integer ;
   end ;
 
@@ -75,6 +75,7 @@ type
       ScrollCode: TScrollCode; var ScrollPos: Integer);
   private
 
+    FImageKeyboard_WndProc,
     FWndProc  : TWndMethod ;
 
     procedure ReadIniValue;
@@ -111,6 +112,9 @@ type
     procedure Show_Keyboard(aFlag: integer; aNote: string);
     procedure Set_KeyBoards_Vars;
     procedure Draw_Keyboard_new(idx, bk_color, border_color: integer);
+    procedure ImageKeyboard_WndProc(var Message: TMessage);
+    procedure Highlight_Keyboard(f, x, y: integer);
+    function get_Keyboard_idx(x, y: integer): integer;
     { Private declarations }
   public
     { Public declarations }
@@ -146,11 +150,13 @@ var
   f_KeyBoard_red_color,
   f_KeyBoard_black_color,
 
+  f_KeyBoard_MouseIn,
   f_KeyBoard_Note_si,
   f_KeyBoard_Note_ei,
   f_KeyBoard_width,
   f_KeyBoard_show_nn  : integer ;
 
+  f_KeyBoard_HighlightNote  : string ;
 
   f_KeyBoard_xyab : array[0..128] of TKeyboard_xyab ;
 
@@ -201,49 +207,7 @@ begin
 
   end else if ( sn=2011 ) then begin //音频打开标志
     f_audio_open_flag := sv ;
-{
-  end else if ( sn=200000+1001 ) then begin
-  end else if ( sn=200000+1002 ) then begin
-    ii := sv mod 1000 ;
-    sv := sv div 1000 ;
-    f_FileData[ii] := sv ;
-    ss := 'OpType=DataRef'+ CR0 +
-          'IPC_II='+inttostr(ii)+CR0 +
-          'Data='+inttostr(f_FileData[ii])+'-'+inttostr(f_SockData[ii])+CR0 +
-          '' ;
-    RunName_Data( 0, 'ShowDataInfo='+ss ) ;
 
-  end else if ( sn=200000+2001 ) then begin
-    pp := f_ipc_simu_vars( 101, sv, 'PEER_INFO' ) ;
-    if ( pp<>nil ) then begin
-      ss := pp ;
-      ii := sv ;
-      ss := 'OpType=DataRef'+ CR0 +
-            'IPC_II='+inttostr(ii)+CR0 +
-            'Desc='+ss+CR0 +
-            '' ;
-      RunName_Data( 0, 'ShowDataInfo='+ss ) ;
-    end ;
-
-  end else if ( sn=200000+2002 ) then begin
-    ii := sv mod 1000 ;
-    sv := sv div 1000 ;
-    f_SockData[ii] := sv ;
-    ss := 'OpType=DataRef'+ CR0 +
-          'IPC_II='+inttostr(ii)+CR0 +
-          'Data='+inttostr(f_FileData[ii])+'-'+inttostr(f_SockData[ii])+CR0 +
-          '' ;
-    RunName_Data( 0, 'ShowDataInfo='+ss ) ;
-  end else if ( sn=200000+2009 ) then begin
-    ii := sv mod 1000 ;
-    f_SockData[ii] := 0 ;
-    ss := 'OpType=DataRef'+ CR0 +
-          'IPC_II='+inttostr(ii)+CR0 +
-          'Data='+inttostr(f_FileData[ii])+'-'+inttostr(f_SockData[ii])+CR0 +
-          'Desc= '+CR0 +
-          '' ;
-    RunName_Data( 0, 'ShowDataInfo='+ss ) ;
-}
   end ;
 end ;
 ////////////////////////////////////////////////////////////////////////////////
@@ -1005,12 +969,19 @@ begin
 //  f_KeyBoard_Note_si := gFreqCalc.get_idx_by_note( 'F 3' ) ;
 
   f_KeyBoard_Note_ei := f_KeyBoard_Note_si + f_KeyBoard_show_nn ;
-  f_KeyBoard_font_color := RGB(200,200,255) ;
+  f_KeyBoard_font_color := RGB(150,150,200) ;
   f_KeyBoard_white_color := RGB(254,254,254) ;
-  f_KeyBoard_green_color := RGB(220,254,220) ;
-  f_KeyBoard_red_color := RGB(254,220,220) ;
+  f_KeyBoard_green_color := RGB(200,254,200) ;
+  f_KeyBoard_red_color := RGB(254,200,200) ;
   f_KeyBoard_black_color := RGB(2,2,2) ;
   f_KeyBoard_ff := 0.66 ;
+
+
+  FImageKeyboard_WndProc := Image_Keyboard.WindowProc ;
+  Image_Keyboard.WindowProc := ImageKeyboard_WndProc ;
+
+  f_KeyBoard_MouseIn := 0 ;
+
 end ;
 ////////////////////////////////////////////////////////////////////////////////
 procedure TfrmMain.ScrollBar_KeyboardScroll(Sender: TObject; ScrollCode: TScrollCode; var ScrollPos: Integer);
@@ -1075,11 +1046,13 @@ begin
       f_KeyBoard_xyab[i].y := yy ;
       f_KeyBoard_xyab[i].a := aa ;
       f_KeyBoard_xyab[i].b := bb ;
+      f_KeyBoard_xyab[i].f := 0 ;
       if ( black_note<>'' ) then begin
         f_KeyBoard_xyab[i-1].x := xx-floor(f_KeyBoard_ff*aa/2) ;
         f_KeyBoard_xyab[i-1].y := yy ;
         f_KeyBoard_xyab[i-1].a := floor(f_KeyBoard_ff*aa) ;
         f_KeyBoard_xyab[i-1].b := floor(0.8*bb) ;
+        f_KeyBoard_xyab[i-1].f := 1 ;
         black_note := '' ;
       end ;
       xx := xx + aa ;
@@ -1110,20 +1083,21 @@ begin
 
   bk_cc := f_KeyBoard_white_color ;
   bd_cc := f_KeyBoard_black_color ;
-  if ( aFlag=1 ) then begin
-    bk_cc := f_KeyBoard_green_color ;
-  end else if ( aFlag=2 ) then begin
-    bk_cc := f_KeyBoard_red_color ;
-  end ;
+  
   fa := floor(0.24*aa) ;
-  if ( aNote='C 8' ) then begin
-    ss := '' ;
-  end ;
+
   if ( aNote[2]=' ' ) then begin
+
+    if ( aFlag=1 ) then begin
+      bk_cc := f_KeyBoard_green_color ;
+    end else if ( aFlag=2 ) then begin
+      bk_cc := f_KeyBoard_red_color ;
+    end ;
+
     Draw_Keyboard_new( idx, bk_cc, bd_cc ) ;
     ss := aNote[1] ;
     fx := Canvas_DrawText2( Image_Keyboard.Picture.Bitmap.Canvas, ss, xx+ aa div 2, yy+bb-floor(1.0*fa), 0, 0, 'Arial', fa, f_KeyBoard_font_color, bk_cc, [fsBold] ) ;
-    Canvas_DrawText2( Image_Keyboard.Picture.Bitmap.Canvas, aNote[3], xx + aa div 2 + fx div 2 + 1, yy+bb-floor(0.5*fa), 1, -1, 'Arial', floor(0.8*fa), f_KeyBoard_font_color, bk_cc, [fsBold] ) ;
+    Canvas_DrawText2( Image_Keyboard.Picture.Bitmap.Canvas, aNote[3], xx + aa div 2 + fx div 2 + 1, yy+bb-floor(0.2*fa), 1, -1, 'Arial', floor(0.8*fa), f_KeyBoard_font_color, bk_cc, [fsBold] ) ;
     if ( ss='C' ) or ( ss='F' ) then begin
       if ( idx<f_KeyBoard_Note_ei-1 ) then begin
         Draw_Keyboard_new( idx+1, bd_cc, bd_cc ) ;
@@ -1133,13 +1107,19 @@ begin
         Draw_Keyboard_new( idx-1, bd_cc, bd_cc ) ;
       end ;
       if ( idx<f_KeyBoard_Note_ei-1 ) then begin
-        Draw_Keyboard_new( idx-1, bd_cc, bd_cc ) ;
+        Draw_Keyboard_new( idx+1, bd_cc, bd_cc ) ;
       end ;
     end else begin
       Draw_Keyboard_new( idx-1, bd_cc, bd_cc ) ;
     end ;
   end else begin
-    Draw_Keyboard_new( idx, bd_cc, bd_cc ) ;
+    bk_cc := bd_cc ;
+    if ( aFlag=1 ) then begin
+      bk_cc := f_KeyBoard_green_color-RGB(200,150,200) ;
+    end else if ( aFlag=2 ) then begin
+      bk_cc := f_KeyBoard_red_color-RGB(150,200,200) ;
+    end ;
+    Draw_Keyboard_new( idx, bk_cc, bd_cc ) ;
   end ;
 end ;
 ////////////////////////////////////////////////////////////////////////////////
@@ -1163,6 +1143,71 @@ begin
     DrawBarOnCanvas( Image_Keyboard.Picture.Bitmap.Canvas, xx, yy, aa, aa, bk_color, bk_color ) ;
   end else begin
     DrawBarOnCanvas( Image_Keyboard.Picture.Bitmap.Canvas, xx+1, yy+1, aa-2, aa-2, bk_color, bk_color ) ;
+  end ;
+end ;
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+function TfrmMain.get_Keyboard_idx( x, y: integer ): integer ;
+var
+    i   : integer ;
+begin
+  result := -1 ;
+  for i:=0 to f_KeyBoard_show_nn-1 do begin
+    if ( x>=f_Keyboard_xyab[i].x ) and ( x<=f_Keyboard_xyab[i].x+f_Keyboard_xyab[i].a )
+    and ( y>=f_Keyboard_xyab[i].y ) and ( y<=f_Keyboard_xyab[i].y+f_Keyboard_xyab[i].b ) then begin
+      if ( f_Keyboard_xyab[i].f=1 ) then begin
+        result := i ;  // 正好是黑键
+      end else if ( i<f_KeyBoard_show_nn-1 )
+      and ( x>=f_Keyboard_xyab[i+1].x ) and ( x<=f_Keyboard_xyab[i+1].x+f_Keyboard_xyab[i+1].a )
+      and ( y>=f_Keyboard_xyab[i+1].y ) and ( y<=f_Keyboard_xyab[i+1].y+f_Keyboard_xyab[i+1].b ) then begin
+        result := i+1 ; // 如果落入右侧的黑键中
+      end else begin
+        result := i ; // 白键
+      end ;
+      break ;
+    end ;
+  end ;
+end ;
+////////////////////////////////////////////////////////////////////////////////
+procedure TfrmMain.Highlight_Keyboard( f, x, y: integer );
+var
+  idx : integer ;
+begin
+  if ( f_KeyBoard_HighlightNote<>'' ) then begin
+    Show_Keyboard( 0, f_KeyBoard_HighlightNote ) ;
+  end ;
+  if ( f=0 ) then begin
+    exit ;
+  end ;
+  idx := get_Keyboard_idx( x, y ) ;
+  if ( idx>=0 ) then begin
+    f_KeyBoard_HighlightNote := gFreqCalc.get_Note_by_idx( idx+f_KeyBoard_Note_si ) ;
+    Show_Keyboard( 2, f_KeyBoard_HighlightNote ) ;
+  end ;
+end ;
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+procedure TfrmMain.ImageKeyboard_WndProc( var Message : TMessage );
+var
+    flag  : integer ;
+begin
+  flag := 0 ;
+  if ( gg_RunFlag>0 ) then begin
+    if ( Message.Msg=0 ) then begin
+    end else if ( Message.Msg=CM_MOUSEENTER ) then begin
+      f_KeyBoard_MouseIn := 1 ;
+      f_KeyBoard_HighlightNote := '' ;
+    end else if ( Message.Msg=CM_MOUSELEAVE ) then begin
+      f_KeyBoard_MouseIn := 0 ;
+      Highlight_Keyboard( 0, 0, 0 ) ;
+    end else if ( Message.Msg=WM_MOUSEMOVE ) then begin
+      if ( f_KeyBoard_MouseIn>0 ) then begin
+        Highlight_Keyboard( 1, Message.LParamLo, Message.LParamHi ) ; // x, y
+      end ;
+    end ;
+  end ;
+  if ( flag=0 ) then begin
+    FImageKeyboard_WndProc( Message ) ;
   end ;
 end ;
 ////////////////////////////////////////////////////////////////////////////////
