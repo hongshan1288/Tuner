@@ -7,7 +7,7 @@ uses
   math,
   utFreqCalc,
   HsMoveForm,
-  StdCtrls, ExtCtrls, HsSkinPanel, MySlider;
+  StdCtrls, ExtCtrls, HsSkinPanel, MySlider, jpeg;
 
 type
 
@@ -46,6 +46,8 @@ type
     Panel_KeyboardBase: TPanel;
     Image_Keyboard: TImage;
     ScrollBar_Keyboard: TScrollBar;
+    panFreqMeter: TPanel;
+    imgFreqMeter: TImage;
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure FormResize(Sender: TObject);
@@ -119,6 +121,8 @@ type
     procedure FreqLight_Keyboard(aNote: string);
     procedure Align_Keyboards(xx: integer);
     procedure Draw_NoteName(idx, bk_cc: integer);
+    procedure Draw_FreqMeter;
+    procedure Align_FreqMeter;
     { Private declarations }
   public
     { Public declarations }
@@ -159,6 +163,7 @@ var
   f_KeyBoard_MouseIn,
   f_KeyBoard_Note_si,
   f_KeyBoard_Note_ei,
+  f_Keyboard_yy,
   f_KeyBoard_width,
   f_KeyBoard_show_nn  : integer ;
 
@@ -906,7 +911,6 @@ begin
   bk_color := Panel_DataInfoBase.color ;
 
   ss := sss[1] ;
-//  yy := -bb div 10 ;
   yy := -bb div 8 ;
   x1 := xx + Canvas_DrawText2( imgNoteInfo.Picture.Bitmap.Canvas, ss, xx, yy, 1, 1, font_name, bb, note_color, bk_color, [fsBold] ) ;
 
@@ -1021,6 +1025,8 @@ begin
 
   H_ScrollBar_Vars( ScrollBar_Keyboard, Panel_KeyboardBase, Image_Keyboard, 1 ) ;
 
+  Align_FreqMeter ;
+
 end;
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -1050,8 +1056,9 @@ begin
   n := f_KeyBoard_show_nn ;
   xx := f_KeyBoard_width div 2 ;
   aa := f_KeyBoard_width ;
-  yy := floor(0.5*aa) ;
-  bb := Image_Keyboard.Height-floor( 1.0*aa ) ;
+  yy := floor(0.9*aa) ;
+  f_Keyboard_yy := yy+5 ;
+  bb := Image_Keyboard.Height-floor( 1.3*aa ) ;
   for i:=0 to n-1 do begin
     sNote := gFreqCalc.get_note_by_idx( i+f_KeyBoard_Note_si ) ;
     if ( sNote[2]=' ' ) then begin
@@ -1080,17 +1087,18 @@ var
     idx : integer ;
 begin
   idx := gFreqCalc.get_idx_by_note( aNote ) ;
+  idx := idx - f_KeyBoard_Note_si ;
   if ( aNote[2]=' ' ) then begin
     Draw_Keyboard_new( idx, aFlag, 0 ) ; // 0--°×¼ü
     if ( aNote[1]='C' ) or ( aNote[1]='F' ) then begin
-      if ( idx<f_KeyBoard_Note_ei-1 ) then begin
+      if ( idx<f_KeyBoard_show_nn-1 ) then begin
         Draw_Keyboard_new( idx+1, aFlag, 1 ) ; // 1--ºÚ¼ü
       end ;
     end else if ( aNote[1]='D' ) or ( aNote[1]='G' ) or ( aNote[1]='A' ) then begin
-      if ( idx>f_KeyBoard_Note_si ) then begin
+      if ( idx>0 ) then begin
         Draw_Keyboard_new( idx-1, aFlag, 1 ) ; // 1--ºÚ¼ü
       end ;
-      if ( idx<f_KeyBoard_Note_ei-1 ) then begin
+      if ( idx<f_KeyBoard_show_nn-1 ) then begin
         Draw_Keyboard_new( idx+1, aFlag, 1 ) ;  // 1--ºÚ¼ü
       end ;
     end else begin
@@ -1106,7 +1114,7 @@ var
   bk_cc,
   bd_cc : integer ;
 begin
-  idx := idx - f_KeyBoard_Note_si ;
+  idx := idx ;
   bk_cc := f_KeyBoard_white_color ;
   bd_cc := f_KeyBoard_black_color ;
   if (cc_type=0) then begin
@@ -1313,6 +1321,31 @@ begin
 end ;
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
+procedure TfrmMain.Align_FreqMeter;
+var
+    xx,
+    yy  : integer ;
+    dd  : double ;
+begin
+  yy := 2 ;
+  if ( f_KeyBoard_FreqNote_idx>=0 ) then begin
+    xx := (Panel_KeyboardBase.width-panFreqMeter.Width) div 2 ;
+  end else begin
+    xx := (Panel_KeyboardBase.width-panFreqMeter.Width) div 2 ;
+  end ;
+  panFreqMeter.Height := f_Keyboard_yy ;
+  dd := f_Keyboard_yy ;
+  dd := dd / 60 ;
+  dd := dd * 500 ;
+  panFreqMeter.width := floor( dd ) ;
+  panFreqMeter.Top := yy ;
+  panFreqMeter.Left := xx ;
+  imgFreqMeter.Refresh ;
+end ;
+////////////////////////////////////////////////////////////////////////////////
+procedure TfrmMain.Draw_FreqMeter;
+begin
+end ;
 ////////////////////////////////////////////////////////////////////////////////
 
 end.
