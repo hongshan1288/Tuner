@@ -108,16 +108,17 @@ type
     procedure draw_pcm_waveForm;
     procedure Init_Keyboard_vars;
     procedure Draw_AllKeyboards;
-    procedure Draw_Keyboard( xx, yy, aa, bb, bk_color, border_color: integer ) ;
+    procedure Draw_Keyboard( xx, yy, aa, bb, bk_cc, bd_cc: integer ) ;
     procedure Show_Keyboard(aFlag: integer; aNote: string);
     procedure Set_KeyBoards_Vars;
-    procedure Draw_Keyboard_new(idx, bk_color, border_color: integer);
+    procedure Draw_Keyboard_new(idx, cc_type, bk_type: integer);
     procedure ImageKeyboard_WndProc(var Message: TMessage);
     procedure Highlight_Keyboard(f, x, y: integer);
     function get_Keyboard_idx(x, y: integer): integer;
     procedure Move_Keyboards(dx: integer);
     procedure FreqLight_Keyboard(aNote: string);
     procedure Align_Keyboards(xx: integer);
+    procedure Draw_NoteName(idx, bk_cc: integer);
     { Private declarations }
   public
     { Public declarations }
@@ -163,6 +164,8 @@ var
 
   f_KeyBoard_FreqNote,
   f_KeyBoard_MouseNote  : string ;
+
+  f_KeyBoard_FreqNote_idx  : integer=-1 ;
 
   f_KeyBoard_xyab : array[0..128] of TKeyboard_xyab ;
 
@@ -979,7 +982,7 @@ begin
 //  f_KeyBoard_Note_si := gFreqCalc.get_idx_by_note( 'F 3' ) ;
 
   f_KeyBoard_Note_ei := f_KeyBoard_Note_si + f_KeyBoard_show_nn ;
-  f_KeyBoard_font_color := RGB(150,150,200) ;
+  f_KeyBoard_font_color := RGB(150,150,180) ;
   f_KeyBoard_white_color := RGB(254,254,254) ;
   f_KeyBoard_green_color := RGB(200,254,200) ;
   f_KeyBoard_red_color := RGB(254,200,200) ;
@@ -1074,86 +1077,129 @@ end ;
 ////////////////////////////////////////////////////////////////////////////////
 procedure TfrmMain.Show_Keyboard( aFlag: integer; aNote: string ) ;
 var
-    bk_cc,
-    bd_cc,
-    yy,
-    bb,
-    fx,
-    fa,
-    xx,
-    aa,
     idx : integer ;
-    ss  : string ;
 begin
-
   idx := gFreqCalc.get_idx_by_note( aNote ) ;
-  xx := f_KeyBoard_xyab[idx - f_KeyBoard_Note_si].x ;
-  aa := f_KeyBoard_width ;
-  yy := floor(0.3*aa) ;
-  bb := f_KeyBoard_xyab[idx - f_KeyBoard_Note_si].b ; //Image_Keyboard.Height-floor( 1.2*aa ) ;
-
-  bk_cc := f_KeyBoard_white_color ;
-  bd_cc := f_KeyBoard_black_color ;
-
-  fa := floor(0.24*aa) ;
-
   if ( aNote[2]=' ' ) then begin
-
-    if ( aFlag=1 ) then begin
-      bk_cc := f_KeyBoard_green_color ;
-    end else if ( f_KeyBoard_FreqNote=aNote ) then begin
-      bk_cc := f_KeyBoard_red_color ;
-    end ;
-
-    Draw_Keyboard_new( idx, bk_cc, bd_cc ) ;
-    ss := aNote[1] ;
-    fx := Canvas_DrawText2( Image_Keyboard.Picture.Bitmap.Canvas, ss, xx+ aa div 2, yy+bb-floor(1.0*fa), 0, 0, 'Arial', fa, f_KeyBoard_font_color, bk_cc, [fsBold] ) ;
-    Canvas_DrawText2( Image_Keyboard.Picture.Bitmap.Canvas, aNote[3], xx + aa div 2 + fx div 2 + 1, yy+bb-floor(0.2*fa), 1, -1, 'Arial', floor(0.8*fa), f_KeyBoard_font_color, bk_cc, [fsBold] ) ;
-    if ( ss='C' ) or ( ss='F' ) then begin
+    Draw_Keyboard_new( idx, aFlag, 0 ) ; // 0--°×¼ü
+    if ( aNote[1]='C' ) or ( aNote[1]='F' ) then begin
       if ( idx<f_KeyBoard_Note_ei-1 ) then begin
-        Draw_Keyboard_new( idx+1, bd_cc, bd_cc ) ;
+        Draw_Keyboard_new( idx+1, aFlag, 1 ) ; // 1--ºÚ¼ü
       end ;
-    end else if ( ss='D' ) or ( ss='G' ) or ( ss='A' ) then begin
+    end else if ( aNote[1]='D' ) or ( aNote[1]='G' ) or ( aNote[1]='A' ) then begin
       if ( idx>f_KeyBoard_Note_si ) then begin
-        Draw_Keyboard_new( idx-1, bd_cc, bd_cc ) ;
+        Draw_Keyboard_new( idx-1, aFlag, 1 ) ; // 1--ºÚ¼ü
       end ;
       if ( idx<f_KeyBoard_Note_ei-1 ) then begin
-        Draw_Keyboard_new( idx+1, bd_cc, bd_cc ) ;
+        Draw_Keyboard_new( idx+1, aFlag, 1 ) ;  // 1--ºÚ¼ü
       end ;
     end else begin
-      Draw_Keyboard_new( idx-1, bd_cc, bd_cc ) ;
+      Draw_Keyboard_new( idx-1, aFlag, 1 ) ;  // 1--ºÚ¼ü
     end ;
   end else begin
-    bk_cc := bd_cc ;
-    if ( aFlag=1 ) then begin
-      bk_cc := f_KeyBoard_green_color-RGB(200,150,200) ;
-    end else if ( f_KeyBoard_FreqNote=aNote ) then begin
-      bk_cc := f_KeyBoard_red_color-RGB(150,200,200) ;
-    end ;
-    Draw_Keyboard_new( idx, bk_cc, bd_cc ) ;
+    Draw_Keyboard_new( idx, aFlag, 2 ) ;  // 1--ºÚ¼ü
   end ;
 end ;
 ////////////////////////////////////////////////////////////////////////////////
-procedure TfrmMain.Draw_Keyboard_new( idx, bk_color, border_color: integer ) ;
+procedure TfrmMain.Draw_Keyboard_new( idx, cc_type, bk_type: integer ) ;
+var
+  bk_cc,
+  bd_cc : integer ;
 begin
   idx := idx - f_KeyBoard_Note_si ;
+  bk_cc := f_KeyBoard_white_color ;
+  bd_cc := f_KeyBoard_black_color ;
+  if (cc_type=0) then begin
+    if ( bk_type=0 ) then begin
+      if ( idx=f_KeyBoard_FreqNote_idx ) then begin
+        bk_cc := f_KeyBoard_red_color ;
+      end else begin
+        bk_cc := f_KeyBoard_white_color ;
+      end ;
+    end else if ( bk_type=1 ) then begin
+      if ( idx=f_KeyBoard_FreqNote_idx ) then begin
+        bk_cc := f_KeyBoard_red_color-RGB(150,200,200) ;
+        bd_cc := bk_cc ;
+      end else begin
+        bk_cc := f_KeyBoard_black_color ;
+      end ;
+    end else if ( bk_type=2 ) then begin
+      if ( idx=f_KeyBoard_FreqNote_idx ) then begin
+        bk_cc := f_KeyBoard_red_color-RGB(150,200,200) ;
+        bd_cc := bk_cc ;
+      end else begin
+        bk_cc := f_KeyBoard_black_color ;
+      end ;
+    end ;
+  end else if (cc_type=1) then begin
+    if ( bk_type=0 ) then begin
+      bk_cc := f_KeyBoard_green_color ;
+    end else if ( bk_type=1 ) then begin
+      if ( idx=f_KeyBoard_FreqNote_idx ) then begin
+        bk_cc := f_KeyBoard_red_color-RGB(150,200,200) ;
+        bd_cc := bk_cc ;
+      end else begin
+        bk_cc := f_KeyBoard_black_color ;
+      end ;
+    end else if ( bk_type=2 ) then begin
+      bk_cc := f_KeyBoard_green_color-RGB(200,150,200) ;
+    end ;
+  end else if (cc_type=2) then begin
+    if ( bk_type=0 ) then begin
+      if ( idx=f_KeyBoard_FreqNote_idx ) then begin
+        bk_cc := f_KeyBoard_red_color ;
+      end else begin
+        bk_cc := f_KeyBoard_white_color ;
+      end ;
+    end else if ( bk_type=1 ) then begin
+      if ( idx=f_KeyBoard_FreqNote_idx ) then begin
+        bk_cc := f_KeyBoard_red_color-RGB(150,200,200) ;
+        bd_cc := bk_cc ;
+      end else begin
+        bk_cc := f_KeyBoard_black_color ;
+      end ;
+    end ;
+  end ;
   Draw_Keyboard(  f_Keyboard_xyab[idx].x,
                   f_Keyboard_xyab[idx].y,
                   f_Keyboard_xyab[idx].a,
                   f_Keyboard_xyab[idx].b,
-                  bk_color, border_color ) ;
+                  bk_cc, bd_cc ) ;
+  if ( bk_type=0 ) then begin // °×¼ü
+    Draw_NoteName( idx, bk_cc ) ;
+  end ;
 end ;
 ////////////////////////////////////////////////////////////////////////////////
-procedure TfrmMain.Draw_Keyboard( xx, yy, aa, bb, bk_color, border_color: integer ) ;
+procedure TfrmMain.Draw_NoteName( idx, bk_cc: integer ) ;
+var
+    fa,
+    fx,
+    yy,
+    bb,
+    xx,
+    aa  : integer ;
+    vNote : string ;
+begin
+  xx := f_Keyboard_xyab[idx].x ;
+  aa := f_KeyBoard_width ;
+  yy := floor(0.3*aa) ;
+  bb := f_KeyBoard_xyab[idx].b ;
+  fa := floor(0.24*aa) ;
+  vNote := gFreqCalc.get_Note_by_idx( idx+f_KeyBoard_Note_si ) ;
+  fx := Canvas_DrawText2( Image_Keyboard.Picture.Bitmap.Canvas, vNote[1], xx+ aa div 2, yy+bb-floor(1.0*fa), 0, 0, 'Arial', fa, f_KeyBoard_font_color, bk_cc, [fsBold] ) ;
+  Canvas_DrawText2( Image_Keyboard.Picture.Bitmap.Canvas, vNote[3], xx + aa div 2 + fx div 2 + 1, yy+bb-floor(0.2*fa), 1, -1, 'Arial', floor(0.8*fa), f_KeyBoard_font_color, bk_cc, [fsBold] ) ;
+end ;
+////////////////////////////////////////////////////////////////////////////////
+procedure TfrmMain.Draw_Keyboard( xx, yy, aa, bb, bk_cc, bd_cc: integer ) ;
 var
   dx  : integer ;
 begin
   dx := floor(0.56*aa) ;
-  DrawRoundBarOnCanvas( Image_Keyboard.Picture.Bitmap.Canvas, xx, yy, aa, bb, dx, dx+1, bk_color, border_color ) ;
-  if ( bk_color=border_color ) then begin
-    DrawBarOnCanvas( Image_Keyboard.Picture.Bitmap.Canvas, xx, yy, aa, aa, bk_color, bk_color ) ;
+  DrawRoundBarOnCanvas( Image_Keyboard.Picture.Bitmap.Canvas, xx, yy, aa, bb, dx, dx+1, bk_cc, bd_cc ) ;
+  if ( bk_cc=bd_cc ) then begin
+    DrawBarOnCanvas( Image_Keyboard.Picture.Bitmap.Canvas, xx, yy, aa, aa, bd_cc, bd_cc ) ;
   end else begin
-    DrawBarOnCanvas( Image_Keyboard.Picture.Bitmap.Canvas, xx+1, yy+1, aa-2, aa-2, bk_color, bk_color ) ;
+    DrawBarOnCanvas( Image_Keyboard.Picture.Bitmap.Canvas, xx+1, yy+1, aa-2, aa-2, bk_cc, bk_cc ) ;
   end ;
 end ;
 ////////////////////////////////////////////////////////////////////////////////
@@ -1192,7 +1238,8 @@ begin
   aa := f_Keyboard_xyab[idx].a ;
   xx := xx - Image_Keyboard.parent.width div 2 ;
   Align_Keyboards( -(xx+aa div 2) ) ;
-  Show_Keyboard( 2, aNote ) ;
+  f_KeyBoard_FreqNote_idx := idx ;
+  Show_Keyboard( 0, aNote ) ;
 end ;
 ////////////////////////////////////////////////////////////////////////////////
 procedure TfrmMain.Highlight_Keyboard( f, x, y: integer );
